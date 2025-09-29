@@ -1,0 +1,54 @@
+name: hearing_hands
+description: A new Flutter project.
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.2.1
+  smooth_page_indicator: ^1.1.0
+  audioplayers: ^5.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1 
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/hhlogo.png
+    - assets/images/hand.png
+    - assets/images/group.jpg
+    - assets/images/talk.png
+    - assets/images/bear.png
+    - assets/images/welcome.png
+    - assets/images/google.png
+    - assets/images/c_a.png
+    - assets/images/c_b.png
+    - assets/images/c_c.png
+    - assets/images/c_d.png
+    - assets/images/c_e.png
+    - assets/images/c_f.png
+    - assets/images/c_g.png
+    - assets/images/abclesson.png
+    - assets/images/deflesson.png
+    - assets/images/ghilesson.png
+    - assets/images/jkllesson.png
+    - assets/images/mnolesson.png
+    - assets/images/pqrlesson.png
+    - assets/images/stulesson.png
+    - assets/images/vwxlesson.png
+    - assets/images/yzlesson.png
+
+    - assets/audios/intro.mp3
+  fonts:
+    - family: Whisper
+      fonts:
+        - asset: assets/fonts/Whisper-Regular.ttf
