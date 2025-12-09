@@ -24,7 +24,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/hhlogo.png
-    - assets/images/hand.png
+    - assets/images/logo.png
     - assets/images/group.jpg
     - assets/images/talk.png
     - assets/images/bear.png
@@ -46,9 +46,35 @@ flutter:
     - assets/images/stulesson.png
     - assets/images/vwxlesson.png
     - assets/images/yzlesson.png
+    - assets/images/profile.jpg
+    - assets/images/fire.png
+    - assets/images/calendar.png
+    - assets/images/groupbear.png
+    - assets/images/talkbear.png
+    - assets/images/talkbearr.png
+    - assets/images/splash.png
+    - assets/images/awards/alphabetace.png
+    - assets/images/awards/dictionaryexplorer.png
+    - assets/images/awards/feelingsfriend.png
+    - assets/images/awards/fivedaychamp.png
+    - assets/images/awards/greetingsguru.png
+    - assets/images/awards/lessonmaster.png
+    - assets/images/awards/luckyseven.png
+    - assets/images/awards/numberninja.png
+    - assets/images/awards/quicklearner.png
+    - assets/images/awards/quizrookie.png
+    - assets/images/awards/quizwhiz.png
+    - assets/images/awards/trailblazer.png
+    - assets/images/awards/triplethreat.png
+    - assets/images/awards/twodaychamp.png
+    - assets/images/awards/twoweekstreaker.png
 
     - assets/audios/intro.mp3
   fonts:
     - family: Whisper
       fonts:
         - asset: assets/fonts/Whisper-Regular.ttf
+
+    - family: VarelaRound
+      fonts:
+        - asset: assets/fonts/VarelaRound-Regular.ttf

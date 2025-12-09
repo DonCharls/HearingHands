@@ -4,30 +4,34 @@ import 'package:hearing_hands/widgets/lesson_button.dart';
 import 'package:hearing_hands/widgets/lesson_close.dart';
 import 'package:hearing_hands/widgets/lesson_back.dart';
 
-class ABCLesson extends StatefulWidget {
-  const ABCLesson({super.key});
+class JKLLesson extends StatefulWidget {
+  const JKLLesson({super.key});
 
   @override
-  State<ABCLesson> createState() => _ABCLessonState();
+  State<JKLLesson> createState() => _JKLLessonState();
 }
 
-class _ABCLessonState extends State<ABCLesson> {
+class _JKLLessonState extends State<JKLLesson> {
   final PageController _controller = PageController();
   int _currentIndex = 0;
   static const Color primaryGreen = Color(0xFF58C56E);
 
   final List<Map<String, String>> letters = [
     {
-      "letter": "A",
-      "word": "Apple 🍎",
-      "video": "https://youtube.com/example-a"
+      "letter": "J",
+      "word": "Juice 🧃",
+      "video": "https://youtube.com/example-j"
     },
     {
-      "letter": "B",
-      "word": "Ball 🏀",
-      "video": "https://youtube.com/example-b"
+      "letter": "K",
+      "word": "Kite 🪁",
+      "video": "https://youtube.com/example-k"
     },
-    {"letter": "C", "word": "Cat 🐱", "video": "https://youtube.com/example-c"},
+    {
+      "letter": "L",
+      "word": "Lion 🦁",
+      "video": "https://youtube.com/example-l"
+    },
   ];
 
   int get totalSlides => 4 + letters.length;
@@ -106,16 +110,16 @@ class _ABCLessonState extends State<ABCLesson> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Text(
-            "Lesson 1: ABC",
+            "Lesson 4: J, K, L",
             style: TextStyle(
                 fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey),
           ),
           const SizedBox(height: 16),
-          Image.asset('assets/images/abclesson.png',
+          Image.asset('assets/images/jkllesson.png',
               height: 180, fit: BoxFit.contain),
           const SizedBox(height: 32),
           const Text(
-            "Welcome to Your First Lesson!",
+            "Learn how to sign J, K, and L!",
             textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 26,
@@ -124,9 +128,9 @@ class _ABCLessonState extends State<ABCLesson> {
           ),
           const SizedBox(height: 16),
           const Text(
-            "We’ll learn how to sign A, B, and C together.\n\n💡 Go at your own pace — tap Start when you’re ready!",
+            "Follow along at your own pace — tap Start when ready.",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+            style: TextStyle(fontSize: 16, color: Colors.black87),
           ),
           const SizedBox(height: 40),
           LessonButton(
@@ -192,7 +196,7 @@ class _ABCLessonState extends State<ABCLesson> {
                 fontWeight: FontWeight.bold,
                 color: Colors.black87)),
         const SizedBox(height: 16),
-        const Text("Try copying the hand signs for A, B, and C.",
+        const Text("Try copying the hand signs for J, K, and L.",
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.black87)),
         const SizedBox(height: 32),
@@ -229,18 +233,18 @@ class _ABCLessonState extends State<ABCLesson> {
       children: [
         const Icon(Icons.check_circle, size: 100, color: primaryGreen),
         const SizedBox(height: 16),
-        const Text("🎉 You’ve completed ABC!",
+        const Text("🎉 You’ve completed JKL!",
             style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87)),
         const SizedBox(height: 12),
-        const Text("Great job learning A, B, and C!",
+        const Text("Great job learning J, K, and L!",
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.black87)),
         const SizedBox(height: 32),
         LessonButton(
-            label: "Continue to Lesson 2",
+            label: "Continue to Lesson 5",
             onPressed: () {
               Navigator.pop(context);
             },
@@ -249,8 +253,10 @@ class _ABCLessonState extends State<ABCLesson> {
     );
   }
 
-  Widget _buildCenteredContent(
-      {required String title, required List<Widget> children}) {
+  Widget _buildCenteredContent({
+    required String title,
+    required List<Widget> children,
+  }) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 120, 24, 24),
       child: Column(

@@ -3,41 +3,29 @@ import 'package:flutter/material.dart';
 class LessonButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
-  final bool isDisabled;
+  final Color color; // add this
 
   const LessonButton({
     super.key,
     required this.label,
     required this.onPressed,
-    this.isDisabled = false,
+    this.color = const Color(0xFF58C56E), // default green
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      child: SizedBox(
-        width: double.infinity,
-        height: 48,
-        child: ElevatedButton(
-          onPressed: isDisabled ? null : onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF58C56E),
-            disabledBackgroundColor: Colors.grey.shade300,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 0,
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 16,
-              color: isDisabled ? Colors.black45 : Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
+        onPressed: onPressed,
+        child: Text(label,
+            style: const TextStyle(fontSize: 16, color: Colors.white)),
       ),
     );
   }

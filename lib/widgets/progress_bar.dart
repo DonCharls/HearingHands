@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ProgressBar extends StatelessWidget {
-  final double progress; // From 0.0 to 1.0
+  final double progress; // 0.0 to 1.0
   final double height;
   final Color backgroundColor;
   final Color fillColor;
@@ -10,14 +10,17 @@ class ProgressBar extends StatelessWidget {
     super.key,
     required this.progress,
     this.height = 6.0,
-    this.backgroundColor = const Color(0xFFE0E0E0), // light gray
-    this.fillColor = const Color(0xFF58C56E), // HearingHands green
+    this.backgroundColor = const Color(0xFFE0E0E0),
+    this.fillColor = const Color(0xFF58C56E),
   });
 
   @override
   Widget build(BuildContext context) {
+    final maxWidth = MediaQuery.of(context).size.width -
+        96; // match horizontal padding of top bar
+
     return ClipRRect(
-      borderRadius: BorderRadius.circular(height / 2), // rounded edges
+      borderRadius: BorderRadius.circular(height / 2),
       child: Container(
         height: height,
         color: backgroundColor,
@@ -26,7 +29,7 @@ class ProgressBar extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            width: MediaQuery.of(context).size.width * progress.clamp(0.0, 1.0),
+            width: maxWidth * progress.clamp(0.0, 1.0),
             color: fillColor,
           ),
         ),
