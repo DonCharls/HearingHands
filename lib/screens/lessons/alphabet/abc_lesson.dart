@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hearing_hands/widgets/progress_bar.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart' as yt;
 import 'package:hearing_hands/widgets/lesson_button.dart';
 import 'package:hearing_hands/widgets/lesson_close.dart';
 import 'package:hearing_hands/widgets/lesson_back.dart';
+import 'package:hearing_hands/widgets/progress_bar.dart';
 
 class ABCLesson extends StatefulWidget {
   const ABCLesson({super.key});
@@ -17,17 +18,9 @@ class _ABCLessonState extends State<ABCLesson> {
   static const Color primaryGreen = Color(0xFF58C56E);
 
   final List<Map<String, String>> letters = [
-    {
-      "letter": "A",
-      "word": "Apple 🍎",
-      "video": "https://youtube.com/example-a"
-    },
-    {
-      "letter": "B",
-      "word": "Ball 🏀",
-      "video": "https://youtube.com/example-b"
-    },
-    {"letter": "C", "word": "Cat 🐱", "video": "https://youtube.com/example-c"},
+    {"letter": "A", "word": "Apple 🍎", "video": "xqmKLCsDqsE"},
+    {"letter": "B", "word": "Ball 🏀", "video": "LNwF7eA4Pcg"},
+    {"letter": "C", "word": "Cat 🐱", "video": "9T8ZMxdu_rE"},
   ];
 
   int get totalSlides => 4 + letters.length;
@@ -137,30 +130,38 @@ class _ABCLessonState extends State<ABCLesson> {
   }
 
   Widget _buildLetterSlide(String letter, String videoUrl, String exampleWord) {
+    // Create YoutubePlayerController using the alias 'yt'
+    yt.YoutubePlayerController controller = yt.YoutubePlayerController(
+      initialVideoId: yt.YoutubePlayer.convertUrlToId(videoUrl)!,
+      flags: const yt.YoutubePlayerFlags(
+        autoPlay: false,
+        mute: false,
+      ),
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 120, 24, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Letter title
           Text(letter,
               style: const TextStyle(
                   fontSize: 72,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87)),
           const SizedBox(height: 16),
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                  child: Text("📹 Video for $letter",
-                      style: const TextStyle(color: Colors.black87))),
-            ),
+
+          // YouTube video player
+          yt.YoutubePlayer(
+            controller: controller,
+            showVideoProgressIndicator: true,
+            progressIndicatorColor: Colors.green,
           ),
+
           const SizedBox(height: 16),
+
+          // Example word text
           RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
@@ -175,6 +176,8 @@ class _ABCLessonState extends State<ABCLesson> {
             ),
           ),
           const SizedBox(height: 32),
+
+          // Next button
           LessonButton(
               label: "Next", onPressed: _nextPage, color: primaryGreen),
         ],

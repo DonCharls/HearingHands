@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ProgressBar extends StatelessWidget {
-  final double progress; // 0.0 to 1.0
+  final double progress;
   final double height;
   final Color backgroundColor;
   final Color fillColor;
@@ -16,8 +16,7 @@ class ProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxWidth = MediaQuery.of(context).size.width -
-        96; // match horizontal padding of top bar
+    final maxWidth = MediaQuery.of(context).size.width - 96;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(height / 2),

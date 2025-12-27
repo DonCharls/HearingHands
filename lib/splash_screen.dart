@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -14,7 +13,6 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -32,11 +30,8 @@ class _SplashScreenState extends State<SplashScreen>
   void _startSplash() async {
     await Future.delayed(const Duration(milliseconds: 500));
     _fadeController.forward();
-
-    await _audioPlayer.play(AssetSource('audios/intro.mp3'));
-    _audioPlayer.onPlayerComplete.listen((event) {
-      _navigateToOnboarding();
-    });
+    await Future.delayed(const Duration(seconds: 2));
+    _navigateToOnboarding();
   }
 
   void _navigateToOnboarding() {
@@ -54,7 +49,6 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _fadeController.dispose();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
