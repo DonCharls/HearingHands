@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'sign_in.dart';
+import 'tabs/home.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -17,16 +20,129 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
+  bool _isLoading = false;
 
-  void handleCreateAccount() {
+  // --- FIREBASE LOGIC HERE ---
+  Future<void> handleCreateAccount() async {
     final fullName = fullNameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Creating account for $fullName')),
-    );
+    // 1. Basic Validation
+    if (fullName.isEmpty || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 6 characters')),
+      );
+      return;
+    }
+
+    // 2. Start Loading
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 3. Create User in Firebase Authentication
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // 4. Create User Profile in Firestore Database
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set({
+        'fullName': fullName,
+        'email': email,
+        'createdAt': FieldValue.serverTimestamp(),
+        'totalPoints': 0,
+        'level': 1,
+        'lessonsCompleted': [],
+      });
+
+      // 5. Success! UX Improved Flow
+      if (mounted) {
+        // --- UX SUCCESS SNACKBAR ---
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Welcome, $fullName! Let\'s start learning.',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF58C56E), // Your Green
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(20),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        // --- AUTO-LOGIN NAVIGATOR ---
+        // Wait 0.5s so they see the nice green message
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Navigate to Home and delete the "Back" history
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const Home()),
+          (route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      // 6. Handle Specific Firebase Errors
+      String message = "An error occurred";
+      if (e.code == 'weak-password') {
+        message = 'The password provided is too weak.';
+      } else if (e.code == 'email-already-in-use') {
+        message = 'The account already exists for that email.';
+      } else if (e.code == 'invalid-email') {
+        message = 'The email address is not valid.';
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      // 7. Stop Loading
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   InputDecoration buildInputDecoration(String label) {
@@ -38,7 +154,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(
-          color: Color(0xFF003366), // dark blue on focus
+          color: Color(0xFF58C56E),
           width: 2,
         ),
       ),
@@ -57,7 +173,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
             children: [
               const SizedBox(height: 20),
 
-              // Back icon aligned left
+              // Back icon
               IconButton(
                 icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
                 onPressed: () {
@@ -93,6 +209,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               TextField(
                 controller: emailController,
                 decoration: buildInputDecoration('Email'),
+                keyboardType: TextInputType.emailAddress,
               ),
 
               const SizedBox(height: 20),
@@ -139,7 +256,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
               const SizedBox(height: 30),
 
-              // Create Account button
+              // Create Account button with Loading State
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -150,15 +267,22 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: handleCreateAccount,
-                  child: const Text(
-                    'Create Account',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  onPressed: _isLoading ? null : handleCreateAccount,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Create Account',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
 

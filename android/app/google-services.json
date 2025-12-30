@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "982985813542",
+    "project_id": "hearinghands-c8d65",
+    "storage_bucket": "hearinghands-c8d65.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:982985813542:android:8736b9c30f0034b4f200e7",
+        "android_client_info": {
+          "package_name": "com.example.hearing_hands"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgGQlGyu1g9FltMBPve2-4TYuotFCuPq4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

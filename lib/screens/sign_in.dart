@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'create_account.dart'; // Import this to navigate to Sign Up
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -12,14 +14,64 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController passwordController = TextEditingController();
 
   bool obscurePassword = true;
+  bool _isLoading = false; // Added loading state
 
-  void handleSignIn() {
+  // --- FIREBASE LOGIN LOGIC ---
+  Future<void> handleSignIn() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Logging in as $email')),
-    );
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your email and password')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true; // Start loading spinner
+    });
+
+    try {
+      // 1. Attempt to Sign In with Firebase
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // 2. Success!
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login Successful! Welcome back.')),
+        );
+
+        // TODO: Navigate to your Home Screen here
+        // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+      }
+    } on FirebaseAuthException catch (e) {
+      // 3. Handle Errors
+      String message = "Login failed";
+      if (e.code == 'user-not-found') {
+        message = 'No user found for that email.';
+      } else if (e.code == 'wrong-password') {
+        message = 'Wrong password provided.';
+      } else if (e.code == 'invalid-credential') {
+        message = 'Invalid email or password.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      // 4. Stop loading spinner
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   InputDecoration buildInputDecoration(String label) {
@@ -31,7 +83,7 @@ class _SignInScreenState extends State<SignInScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(
-          color: Color(0xFF003366), // dark blue on focus
+          color: Color(0xFF58C56E), // Green on focus
           width: 2,
         ),
       ),
@@ -78,6 +130,7 @@ class _SignInScreenState extends State<SignInScreen> {
               TextField(
                 controller: emailController,
                 decoration: buildInputDecoration('Email'),
+                keyboardType: TextInputType.emailAddress,
               ),
 
               const SizedBox(height: 20),
@@ -102,7 +155,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
               const SizedBox(height: 30),
 
-              // Sign In button
+              // Sign In button with Loading State
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -113,15 +166,22 @@ class _SignInScreenState extends State<SignInScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: handleSignIn,
-                  child: const Text(
-                    'Sign In',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  onPressed:
+                      _isLoading ? null : handleSignIn, // Disable if loading
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
 
@@ -141,7 +201,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
               const SizedBox(height: 20),
 
-              // Sign in with Google
+              // Sign in with Google (Placeholder for now)
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -155,7 +215,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('Signing in with Google...')),
+                          content: Text('Google Sign-In is coming soon!')),
                     );
                   },
                   child: Row(
@@ -164,6 +224,8 @@ class _SignInScreenState extends State<SignInScreen> {
                       Image.asset(
                         'assets/images/google.png',
                         height: 24,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.error), // In case image is missing
                       ),
                       const SizedBox(width: 8),
                       const Text(
@@ -181,7 +243,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
               const SizedBox(height: 12),
 
-              // Sign in with Facebook
+              // Sign in with Facebook (Placeholder for now)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -195,7 +257,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('Signing in with Facebook...')),
+                          content: Text('Facebook Sign-In is coming soon!')),
                     );
                   },
                   child: const Row(
@@ -222,8 +284,12 @@ class _SignInScreenState extends State<SignInScreen> {
               Center(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.pop(
-                        context); // or navigate to CreateAccountScreen
+                    // Navigate to Create Account Screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const CreateAccountScreen()),
+                    );
                   },
                   child: RichText(
                     text: const TextSpan(
