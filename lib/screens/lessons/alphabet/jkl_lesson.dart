@@ -1,276 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:hearing_hands/widgets/progress_bar.dart';
-import 'package:hearing_hands/widgets/lesson_button.dart';
-import 'package:hearing_hands/widgets/lesson_close.dart';
-import 'package:hearing_hands/widgets/lesson_back.dart';
+import '../lesson_template.dart';
+import '../../../models/lesson_content.dart';
 
-class JKLLesson extends StatefulWidget {
+class JKLLesson extends StatelessWidget {
   const JKLLesson({super.key});
 
   @override
-  State<JKLLesson> createState() => _JKLLessonState();
-}
-
-class _JKLLessonState extends State<JKLLesson> {
-  final PageController _controller = PageController();
-  int _currentIndex = 0;
-  static const Color primaryGreen = Color(0xFF58C56E);
-
-  final List<Map<String, String>> letters = [
-    {
-      "letter": "J",
-      "word": "Juice 🧃",
-      "video": "https://youtube.com/example-j"
-    },
-    {
-      "letter": "K",
-      "word": "Kite 🪁",
-      "video": "https://youtube.com/example-k"
-    },
-    {
-      "letter": "L",
-      "word": "Lion 🦁",
-      "video": "https://youtube.com/example-l"
-    },
-  ];
-
-  int get totalSlides => 4 + letters.length;
-  double get _progress => (_currentIndex / (totalSlides - 1)).clamp(0.0, 1.0);
-
-  void _nextPage() {
-    if (_currentIndex < totalSlides - 1) {
-      _controller.nextPage(
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-      setState(() => _currentIndex++);
-    }
-  }
-
-  void _prevPage() {
-    if (_currentIndex > 0) {
-      _controller.previousPage(
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-      setState(() => _currentIndex--);
-    }
-  }
-
-  void _exitLesson() => Navigator.pop(context);
-
-  @override
   Widget build(BuildContext context) {
-    final topPadding = MediaQuery.of(context).size.height * 0.06;
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            PageView(
-              controller: _controller,
-              physics: const ClampingScrollPhysics(),
-              children: _buildSlides(),
-            ),
-            Positioned(
-              top: topPadding,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    LessonBackButton(onPressed: _prevPage),
-                    const SizedBox(width: 12),
-                    Expanded(child: ProgressBar(progress: _progress)),
-                    const SizedBox(width: 12),
-                    LessonCloseButton(onPressed: _exitLesson),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildSlides() {
-    List<Widget> slides = [_buildIntroSlide()];
-    slides.addAll(letters.map((data) =>
-        _buildLetterSlide(data['letter']!, data['video']!, data['word']!)));
-    slides.add(_buildPracticeSlide());
-    slides.add(_buildQuizSlide());
-    slides.add(_buildCompletionSlide());
-    return slides;
-  }
-
-  Widget _buildIntroSlide() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 120, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Text(
-            "Lesson 4: J, K, L",
-            style: TextStyle(
-                fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey),
-          ),
-          const SizedBox(height: 16),
-          Image.asset('assets/images/jkllesson.png',
-              height: 180, fit: BoxFit.contain),
-          const SizedBox(height: 32),
-          const Text(
-            "Learn how to sign J, K, and L!",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "Follow along at your own pace — tap Start when ready.",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.black87),
-          ),
-          const SizedBox(height: 40),
-          LessonButton(
-              label: "Start", onPressed: _nextPage, color: primaryGreen),
+    final List<LessonContent> data = [
+      LessonContent(
+        title: "J",
+        word: "Jam 🍓",
+        videoId: "xkLWxgdHwHg",
+        imagePath: "assets/images/dictionary/j.jpg",
+        steps: [
+          "Start with letter I handshape.",
+          "Draw a J in the air.",
+          "End with pinky up."
         ],
       ),
-    );
-  }
-
-  Widget _buildLetterSlide(String letter, String videoUrl, String exampleWord) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 120, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(letter,
-              style: const TextStyle(
-                  fontSize: 72,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87)),
-          const SizedBox(height: 16),
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                  child: Text("📹 Video for $letter",
-                      style: const TextStyle(color: Colors.black87))),
-            ),
-          ),
-          const SizedBox(height: 16),
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: const TextStyle(fontSize: 16, color: Colors.black87),
-              children: [
-                TextSpan(text: "$letter is for "),
-                TextSpan(
-                    text: exampleWord,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                const TextSpan(text: " — practice this sign!"),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          LessonButton(
-              label: "Next", onPressed: _nextPage, color: primaryGreen),
+      LessonContent(
+        title: "K",
+        word: "Kite 🪁",
+        videoId: "zBnjL6KbKJQ",
+        imagePath: "assets/images/dictionary/k.jpg",
+        steps: [
+          "Index and middle in a V shape.",
+          "Place thumb between them.",
+          "Face palm forward."
         ],
       ),
-    );
-  }
-
-  Widget _buildPracticeSlide() {
-    return _buildCenteredContent(
-      title: "Practice",
-      children: [
-        const Text("Practice Time! 🧠",
-            style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87)),
-        const SizedBox(height: 16),
-        const Text("Try copying the hand signs for J, K, and L.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black87)),
-        const SizedBox(height: 32),
-        LessonButton(label: "Next", onPressed: _nextPage, color: primaryGreen),
-      ],
-    );
-  }
-
-  Widget _buildQuizSlide() {
-    return _buildCenteredContent(
-      title: "Mini Quiz",
-      children: [
-        const Text("Quick Quiz ✍️",
-            style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87)),
-        const SizedBox(height: 16),
-        const Text("Which letter is this?",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black87)),
-        const SizedBox(height: 32),
-        LessonButton(
-            label: "Submit & Continue",
-            onPressed: _nextPage,
-            color: primaryGreen),
-      ],
-    );
-  }
-
-  Widget _buildCompletionSlide() {
-    return _buildCenteredContent(
-      title: "Lesson Complete!",
-      children: [
-        const Icon(Icons.check_circle, size: 100, color: primaryGreen),
-        const SizedBox(height: 16),
-        const Text("🎉 You’ve completed JKL!",
-            style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87)),
-        const SizedBox(height: 12),
-        const Text("Great job learning J, K, and L!",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black87)),
-        const SizedBox(height: 32),
-        LessonButton(
-            label: "Continue to Lesson 5",
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            color: primaryGreen),
-      ],
-    );
-  }
-
-  Widget _buildCenteredContent({
-    required String title,
-    required List<Widget> children,
-  }) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 120, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey)),
-          const SizedBox(height: 16),
-          ...children,
+      LessonContent(
+        title: "L",
+        word: "Lion 🦁",
+        videoId: "vbPrLSxMmqU",
+        imagePath: "assets/images/dictionary/l.jpg",
+        steps: [
+          "Extend index upward.",
+          "Extend thumb sideways.",
+          "Keep other fingers closed."
         ],
       ),
+    ];
+
+    return LessonTemplate(
+      lessonTitle: "Lesson 4: JKL",
+      heroImage: "assets/images/abclesson.png",
+      contents: data,
     );
   }
 }
