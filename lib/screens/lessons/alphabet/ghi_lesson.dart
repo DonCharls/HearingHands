@@ -45,7 +45,7 @@ class GHILesson extends StatelessWidget {
 
     return LessonTemplate(
       lessonTitle: "Lesson 3: GHI",
-      heroImage: "assets/images/abclesson.png",
+      heroImage: "assets/images/ghilesson.png",
       contents: data,
     );
   }

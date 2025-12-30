@@ -45,7 +45,7 @@ class PQRLesson extends StatelessWidget {
 
     return LessonTemplate(
       lessonTitle: "Lesson 6: PQR",
-      heroImage: "assets/images/abclesson.png",
+      heroImage: "assets/images/pqrlesson.png",
       contents: data,
     );
   }

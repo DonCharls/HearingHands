@@ -45,7 +45,7 @@ class MNOLesson extends StatelessWidget {
 
     return LessonTemplate(
       lessonTitle: "Lesson 5: MNO",
-      heroImage: "assets/images/abclesson.png",
+      heroImage: "assets/images/mnolesson.png",
       contents: data,
     );
   }

@@ -34,7 +34,7 @@ class YZLesson extends StatelessWidget {
 
     return LessonTemplate(
       lessonTitle: "Lesson 9: YZ",
-      heroImage: "assets/images/abclesson.png",
+      heroImage: "assets/images/yzlesson.png",
       contents: data,
     );
   }

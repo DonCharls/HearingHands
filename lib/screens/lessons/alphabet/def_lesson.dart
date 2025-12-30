@@ -45,8 +45,7 @@ class DEFLesson extends StatelessWidget {
 
     return LessonTemplate(
       lessonTitle: "Lesson 2: DEF",
-      heroImage:
-          "assets/images/abclesson.png", // You can change this to a unique image later!
+      heroImage: "assets/images/deflesson.png",
       contents: data,
     );
   }

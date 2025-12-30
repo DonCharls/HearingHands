@@ -45,7 +45,7 @@ class STULesson extends StatelessWidget {
 
     return LessonTemplate(
       lessonTitle: "Lesson 7: STU",
-      heroImage: "assets/images/abclesson.png",
+      heroImage: "assets/images/stulesson.png",
       contents: data,
     );
   }

@@ -45,7 +45,7 @@ class VWXLesson extends StatelessWidget {
 
     return LessonTemplate(
       lessonTitle: "Lesson 8: VWX",
-      heroImage: "assets/images/abclesson.png",
+      heroImage: "assets/images/vwxlesson.png",
       contents: data,
     );
   }

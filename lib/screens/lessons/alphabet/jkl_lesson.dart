@@ -45,7 +45,7 @@ class JKLLesson extends StatelessWidget {
 
     return LessonTemplate(
       lessonTitle: "Lesson 4: JKL",
-      heroImage: "assets/images/abclesson.png",
+      heroImage: "assets/images/jkllesson.png",
       contents: data,
     );
   }
