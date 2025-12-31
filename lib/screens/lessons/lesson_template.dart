@@ -14,12 +14,14 @@ class LessonTemplate extends StatefulWidget {
   final String lessonTitle;
   final String heroImage;
   final List<LessonContent> contents;
+  final VoidCallback? onComplete; // <--- 1. THIS WAS MISSING
 
   const LessonTemplate({
     super.key,
     required this.lessonTitle,
     required this.heroImage,
     required this.contents,
+    this.onComplete, // <--- 2. THIS WAS MISSING
   });
 
   @override
@@ -52,10 +54,11 @@ class _LessonTemplateState extends State<LessonTemplate> {
   void _generateQuiz() {
     final random = Random();
     // 1. Pick a random letter from the lesson to be the question
-    _quizQuestion = widget.contents[random.nextInt(widget.contents.length)];
-
-    // 2. Get the titles (A, B, C) for the buttons
-    _quizOptions = widget.contents.map((e) => e.title).toList();
+    if (widget.contents.isNotEmpty) {
+      _quizQuestion = widget.contents[random.nextInt(widget.contents.length)];
+      // 2. Get the titles (A, B, C) for the buttons
+      _quizOptions = widget.contents.map((e) => e.title).toList();
+    }
   }
 
   @override
@@ -110,6 +113,10 @@ class _LessonTemplateState extends State<LessonTemplate> {
 
   @override
   Widget build(BuildContext context) {
+    // Safety check for empty content
+    if (widget.contents.isEmpty)
+      return const Scaffold(body: Center(child: Text("No content")));
+
     final topPadding = MediaQuery.of(context).size.height * 0.06;
 
     return Scaffold(
@@ -177,13 +184,11 @@ class _LessonTemplateState extends State<LessonTemplate> {
       padding: const EdgeInsets.fromLTRB(24, 120, 24, 24),
       child: Column(
         children: [
-          // FIX 1: Removed "Lesson: " so it just shows your custom title
           Text(widget.lessonTitle,
               style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey)),
-
           const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.all(10),
@@ -202,13 +207,10 @@ class _LessonTemplateState extends State<LessonTemplate> {
             ),
           ),
           const SizedBox(height: 32),
-
-          // FIX 2: This remains dynamic ("Welcome to Lesson 1: ABC!")
           Text("Welcome to ${widget.lessonTitle}!",
               textAlign: TextAlign.center,
               style:
                   const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-
           const SizedBox(height: 16),
           const Text("Go at your own pace — tap Start when you’re ready!",
               textAlign: TextAlign.center,
@@ -326,7 +328,6 @@ class _LessonTemplateState extends State<LessonTemplate> {
   }
 
   Widget _buildQuizSlide() {
-    // Dynamic Quiz Question (Randomly picked in initState)
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 120, 24, 24),
       child: Column(
@@ -355,7 +356,6 @@ class _LessonTemplateState extends State<LessonTemplate> {
                     offset: const Offset(0, 4))
               ],
             ),
-            // Show the Randomly selected Question Image
             child: Image.asset(_quizQuestion.imagePath, fit: BoxFit.contain),
           ),
           const SizedBox(height: 30),
@@ -447,7 +447,14 @@ class _LessonTemplateState extends State<LessonTemplate> {
         const SizedBox(height: 32),
         LessonButton(
             label: "Finish",
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              // --- 3. EXECUTE THE LOGIC PASSED FROM ABC_LESSON ---
+              if (widget.onComplete != null) {
+                widget.onComplete!();
+              } else {
+                Navigator.pop(context); // Fallback
+              }
+            },
             color: primaryGreen),
       ]),
     );

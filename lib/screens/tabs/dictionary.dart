@@ -8,25 +8,21 @@ class Dictionary extends StatefulWidget {
 }
 
 class _DictionaryState extends State<Dictionary> {
-  // --- COLOR PALETTE ---
-  // Using your specific green color directly in this file
   final Color fslPrimaryGreen = const Color(0xFF58C56E);
+  final Color bgGrey = const Color(0xFFF5F7FA);
 
-  // 1. Generate the alphabet list (a-z) automatically
   final List<String> _alphabet =
       List.generate(26, (index) => String.fromCharCode(97 + index));
 
-  // This list holds the filtered results for the search bar
   List<String> _filteredAlphabet = [];
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _filteredAlphabet = _alphabet; // Start by showing all letters
+    _filteredAlphabet = _alphabet;
   }
 
-  // Logic to filter the list as the user types
   void _filterSearch(String query) {
     setState(() {
       _filteredAlphabet = _alphabet
@@ -35,50 +31,109 @@ class _DictionaryState extends State<Dictionary> {
     });
   }
 
-  // A simple function to show the image in a larger view (UX Requirement)
+  // --- REPAIRED DIALOG (No more overflow) ---
   void _showImageDialog(BuildContext context, String letter) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                "Letter ${letter.toUpperCase()}",
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: fslPrimaryGreen), // Added color here too
-              ),
-            ),
-            Container(
-              height: 250,
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Image.asset(
-                'assets/images/dictionary/$letter.jpg', // YOUR EXACT PATH
-                fit: BoxFit.contain,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: fslPrimaryGreen, // Button is now green
-                  foregroundColor: Colors.white, // Text is white
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black54,
+        pageBuilder: (context, _, __) {
+          return Center(
+            child: Hero(
+              tag: 'hero-letter-$letter',
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.85,
+                  // We limit the total height of the dialog to 80% of the screen
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.8,
+                  ),
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      )
+                    ],
+                  ),
+                  // SingleChildScrollView handles very small screens
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Letter ${letter.toUpperCase()}",
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: fslPrimaryGreen,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.grey),
+                              onPressed: () => Navigator.pop(context),
+                            )
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        // FIXED: Constrained Image Container
+                        Container(
+                          // Dynamic height based on screen size (Max 30% of screen)
+                          constraints: BoxConstraints(
+                            maxHeight:
+                                MediaQuery.of(context).size.height * 0.35,
+                          ),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: fslPrimaryGreen.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Image.asset(
+                            'assets/images/dictionary/$letter.jpg',
+                            fit: BoxFit.contain,
+                            errorBuilder: (ctx, err, stack) => Icon(
+                              Icons.image_not_supported,
+                              size: 80,
+                              color: Colors.grey.shade300,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: fslPrimaryGreen,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text("Got it!",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 16)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: const Text("Close"),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -86,136 +141,184 @@ class _DictionaryState extends State<Dictionary> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset:
+          false, // Prevents keyboard from squishing the UI
+      backgroundColor: bgGrey,
       appBar: AppBar(
         title: const Text("FSL Dictionary",
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         centerTitle: true,
-        backgroundColor: fslPrimaryGreen, // Changed to your specific green
+        backgroundColor: fslPrimaryGreen,
         elevation: 0,
-        iconTheme: const IconThemeData(
-            color: Colors.white), // Ensures back arrow is white
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
-          // --- SEARCH BAR SECTION ---
           Container(
-            color: fslPrimaryGreen, // Matches AppBar
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 25),
+            decoration: BoxDecoration(
+                color: fslPrimaryGreen,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: fslPrimaryGreen.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ]),
             child: TextField(
               controller: _searchController,
               onChanged: _filterSearch,
-              cursorColor: fslPrimaryGreen,
+              style: const TextStyle(color: Colors.black87),
               decoration: InputDecoration(
-                hintText: "Search for a letter...",
-                hintStyle: TextStyle(color: Colors.black.withOpacity(0.4)),
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                hintText: "Search a letter (e.g. 'A')",
+                hintStyle: TextStyle(color: Colors.grey.shade500),
+                prefixIcon: Icon(Icons.search, color: fslPrimaryGreen),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear, color: Colors.grey),
                         onPressed: () {
                           _searchController.clear();
                           _filterSearch('');
-                          FocusScope.of(context).unfocus(); // Hides keyboard
+                          FocusScope.of(context).unfocus();
                         },
                       )
                     : null,
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,
                 ),
               ),
             ),
           ),
-
-          // --- GRID VIEW SECTION ---
           Expanded(
-            child: Container(
-              color: Colors.grey[100], // Light background for contrast
-              child: _filteredAlphabet.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.search_off,
-                              size: 60, color: Colors.grey[400]),
-                          const SizedBox(height: 10),
-                          Text("No letter found",
-                              style: TextStyle(
-                                  color: Colors.grey[600], fontSize: 16)),
-                        ],
-                      ),
-                    )
-                  : GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2, // Two cards per row
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.85, // Adjusts height of the card
-                      ),
-                      itemCount: _filteredAlphabet.length,
-                      itemBuilder: (context, index) {
-                        String letter = _filteredAlphabet[index];
-
-                        return GestureDetector(
-                          onTap: () => _showImageDialog(context, letter),
-                          child: Card(
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16)),
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(12.0),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(16)),
-                                    ),
-                                    child: Image.asset(
-                                      'assets/images/dictionary/$letter.jpg',
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (ctx, err, stack) =>
-                                          const Icon(Icons.broken_image,
-                                              size: 40, color: Colors.grey),
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  width: double.infinity,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: fslPrimaryGreen
-                                        .withOpacity(0.1), // Light green bg
-                                    borderRadius: const BorderRadius.vertical(
-                                        bottom: Radius.circular(16)),
-                                  ),
-                                  child: Text(
-                                    letter.toUpperCase(),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: fslPrimaryGreen, // Green text
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+            child: _filteredAlphabet.isEmpty
+                ? _buildEmptyState()
+                : GridView.builder(
+                    padding: const EdgeInsets.all(20),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.8,
                     ),
-            ),
+                    itemCount: _filteredAlphabet.length,
+                    itemBuilder: (context, index) {
+                      String letter = _filteredAlphabet[index];
+                      return _buildFlashcard(context, letter);
+                    },
+                  ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFlashcard(BuildContext context, String letter) {
+    return GestureDetector(
+      onTap: () => _showImageDialog(context, letter),
+      child: Hero(
+        tag: 'hero-letter-$letter',
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.shade200,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: fslPrimaryGreen.withOpacity(0.1),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  child: Text(
+                    letter.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: fslPrimaryGreen,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Image.asset(
+                      'assets/images/dictionary/$letter.jpg',
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Icon(
+                        Icons.broken_image_rounded,
+                        size: 40,
+                        color: Colors.grey.shade300,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    "Tap to enlarge",
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.search_off_rounded,
+                  size: 60, color: Colors.grey.shade400),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "No letter found",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
