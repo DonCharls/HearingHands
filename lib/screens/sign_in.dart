@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'create_account.dart'; // Import this to navigate to Sign Up
+import 'create_account.dart';
+import 'tabs/home.dart'; // REQUIRED: To navigate to the lesson screen
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -14,7 +15,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController passwordController = TextEditingController();
 
   bool obscurePassword = true;
-  bool _isLoading = false; // Added loading state
+  bool _isLoading = false;
 
   // --- FIREBASE LOGIN LOGIC ---
   Future<void> handleSignIn() async {
@@ -29,7 +30,7 @@ class _SignInScreenState extends State<SignInScreen> {
     }
 
     setState(() {
-      _isLoading = true; // Start loading spinner
+      _isLoading = true;
     });
 
     try {
@@ -41,12 +42,44 @@ class _SignInScreenState extends State<SignInScreen> {
 
       // 2. Success!
       if (mounted) {
+        // --- UX SUCCESS SNACKBAR (MATCHING CREATE ACCOUNT) ---
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login Successful! Welcome back.')),
+          SnackBar(
+            content: const Row(
+              // <--- Add 'const' here
+              children: [
+                // Remove 'const' from these individual widgets (it's implied now)
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Welcome back! Let\'s continue learning.',
+                    // The TextStyle is now automatically const too!
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF58C56E),
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(20),
+            duration: const Duration(seconds: 3),
+          ),
         );
 
-        // TODO: Navigate to your Home Screen here
-        // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+        // --- AUTO-NAVIGATE TO HOME ---
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Check if the screen is still active before navigating
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const Home()),
+            (route) => false,
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       // 3. Handle Errors
@@ -57,6 +90,8 @@ class _SignInScreenState extends State<SignInScreen> {
         message = 'Wrong password provided.';
       } else if (e.code == 'invalid-credential') {
         message = 'Invalid email or password.';
+      } else if (e.code == 'too-many-requests') {
+        message = 'Too many attempts. Try again later.';
       }
 
       if (mounted) {
@@ -166,8 +201,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed:
-                      _isLoading ? null : handleSignIn, // Disable if loading
+                  onPressed: _isLoading ? null : handleSignIn,
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,
@@ -201,7 +235,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
               const SizedBox(height: 20),
 
-              // Sign in with Google (Placeholder for now)
+              // Sign in with Google (Placeholder)
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -225,7 +259,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         'assets/images/google.png',
                         height: 24,
                         errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.error), // In case image is missing
+                            const Icon(Icons.error),
                       ),
                       const SizedBox(width: 8),
                       const Text(
@@ -243,12 +277,12 @@ class _SignInScreenState extends State<SignInScreen> {
 
               const SizedBox(height: 12),
 
-              // Sign in with Facebook (Placeholder for now)
+              // Sign in with Facebook (Placeholder)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1877F2), // Facebook blue
+                    backgroundColor: const Color(0xFF1877F2),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -284,7 +318,6 @@ class _SignInScreenState extends State<SignInScreen> {
               Center(
                 child: GestureDetector(
                   onTap: () {
-                    // Navigate to Create Account Screen
                     Navigator.push(
                       context,
                       MaterialPageRoute(

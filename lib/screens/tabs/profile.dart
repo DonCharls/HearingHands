@@ -16,18 +16,18 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-  // --- 1. STATE VARIABLES ---
+// --- 1. STATE VARIABLES ---
   User? currentUser;
   Map<String, dynamic>? userData;
   bool isLoading = false;
 
-  // CHANGED: Default is now your first avatar asset
-  String profileImage = 'assets/images/avatar/avatar_a.png';
+  // UPDATED: Default picture now points to the first numbered avatar
+  String profileImage = 'assets/images/avatar/avatar_1.png';
 
-  // Generate list of avatars (a-p)
-  final List<String> availableAvatars = List.generate(16, (index) {
-    String letter = String.fromCharCode(97 + index); // a, b, c...
-    return 'assets/images/avatar/avatar_$letter.png';
+  // UPDATED: Generate list of avatars (1 to 32)
+  final List<String> availableAvatars = List.generate(32, (index) {
+    // index starts at 0, so we add 1 to get avatar_1, avatar_2, etc.
+    return 'assets/images/avatar/avatar_${index + 1}.png';
   });
 
   @override
@@ -232,7 +232,7 @@ class _ProfileState extends State<Profile> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4))
                   ],
@@ -272,7 +272,12 @@ class _ProfileState extends State<Profile> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.lock_person, size: 80, color: Color(0xFF58C56E)),
+            Image.asset(
+              'assets/images/locked.png',
+              width: 180, // Adjust size to fit your layout
+              height: 180,
+              fit: BoxFit.contain,
+            ),
             const SizedBox(height: 20),
             const Text("Profile Locked",
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
@@ -535,8 +540,8 @@ class ProfileMenuOption extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isDestructive
-              ? Colors.red.withOpacity(0.1)
-              : const Color(0xFF58C56E).withOpacity(0.1),
+              ? Colors.red.withValues(alpha: 0.1)
+              : const Color(0xFF58C56E).withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(icon,

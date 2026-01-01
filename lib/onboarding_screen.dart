@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/tabs/home.dart';
+import '../screens/tabs/home.dart'; // Ensure correct path
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -13,133 +13,129 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
+  final Color primaryGreen = const Color(0xFF58C56E);
+
+  // Helper to handle navigation to Home
+  void _finishOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('seenOnboarding', true);
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Home()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Determine the color of UI elements based on the page
+    final bool isFirstPage = _currentPage == 0;
+    final Color uiElementColor = isFirstPage ? Colors.white : primaryGreen;
+
     return Scaffold(
+      // AnimatedSwitcher makes background transitions smoother
       body: Stack(
         children: [
           PageView(
             controller: _controller,
-            physics: const NeverScrollableScrollPhysics(),
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
+            onPageChanged: (index) => setState(() => _currentPage = index),
             children: [
-              buildPage(
-                title: 'Welcome to',
-                subtitle: 'HearingHands',
+              // PAGE 1: HERO/WELCOME
+              _buildPage(
+                title: 'Welcome to HearingHands',
                 description:
-                    'An inclusive app to bridge communication gaps\nfor the deaf and mute community.',
-                imageAsset: 'assets/images/logo.png',
-                showImage: true,
-                startColor: const Color(0xFF4F965E),
-                textColor: Colors.white,
+                    'An inclusive app to bridge communication gaps for the Filipino deaf and mute community.',
+                image: 'assets/images/logo.png',
+                bgColor: const Color(0xFF4F965E),
+                isDark: true,
               ),
-              buildCenteredPage(
+              // PAGE 2: EMPOWER
+              _buildPage(
                 title: 'Empowering Connections',
                 description:
-                    'HearingHands empowers communication between hearing individuals and the deaf and mute community, breaking down barriers to create meaningful connections.',
-                imageAsset: 'assets/images/talkbearr.png',
-                textColor: const Color(0xFF58C56E),
+                    'Break down barriers and create meaningful connections between everyone.',
+                image: 'assets/images/talkbearr.png',
+                bgColor: Colors.white,
+                isDark: false,
               ),
-              buildCenteredPage(
-                title: 'Effortless Communication for All',
+              // PAGE 3: CONCLUDE
+              _buildPage(
+                title: 'Effortless Communication',
                 description:
-                    'With HearingHands, sharing ideas and conversations become effortless, fostering understanding and inclusivity for everyone.',
-                imageAsset: 'assets/images/groupbear.png',
-                textColor: const Color(0xFF58C56E),
+                    'Sharing ideas becomes effortless, fostering understanding for everyone.',
+                image: 'assets/images/groupbear.png',
+                bgColor: Colors.white,
+                isDark: false,
               ),
             ],
           ),
-          if (_currentPage >= 1)
+
+          // --- TOP NAV: BACK BUTTON ---
+          if (_currentPage > 0)
             Positioned(
-              top: 55,
-              left: 15,
+              top: 50,
+              left: 10,
               child: IconButton(
-                icon:
-                    const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-                onPressed: () {
-                  _controller.previousPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                },
-              ),
-            ),
-          Positioned(
-            bottom: 80,
-            left: 30,
-            right: 30,
-            child: _currentPage == 0
-                ? ElevatedButton(
-                    onPressed: () {
-                      _controller.nextPage(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF58C56E),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    child: const Text('Let\'s Get Started',
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                  )
-                : ElevatedButton(
-                    onPressed: () async {
-                      if (_currentPage == 2) {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setBool('seenOnboarding', true);
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const Home()),
-                        );
-                      } else {
-                        _controller.nextPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF58C56E),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    child: const Text('Continue',
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                  ),
-          ),
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: SmoothPageIndicator(
-                controller: _controller,
-                count: 3,
-                effect: ExpandingDotsEffect(
-                  activeDotColor: const Color(0xFF58C56E),
-                  dotColor: Colors.grey.shade400,
-                  dotHeight: 8,
-                  dotWidth: 8,
-                  expansionFactor: 3,
+                icon: Icon(Icons.arrow_back_ios_new,
+                    color: uiElementColor, size: 24),
+                onPressed: () => _controller.previousPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
                 ),
               ),
+            ),
+
+          // --- BOTTOM NAV: BUTTON & INDICATOR ---
+          Positioned(
+            bottom: 50,
+            left: 30,
+            right: 30,
+            child: Column(
+              children: [
+                SmoothPageIndicator(
+                  controller: _controller,
+                  count: 3,
+                  effect: ExpandingDotsEffect(
+                    activeDotColor: uiElementColor,
+                    dotColor:
+                        isFirstPage ? Colors.white54 : Colors.grey.shade300,
+                    dotHeight: 8,
+                    dotWidth: 8,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: _currentPage == 2
+                        ? _finishOnboarding
+                        : () {
+                            _controller.nextPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          isFirstPage ? Colors.white : primaryGreen,
+                      foregroundColor:
+                          isFirstPage ? primaryGreen : Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15)),
+                    ),
+                    child: Text(
+                      _currentPage == 0
+                          ? 'Let\'s Get Started'
+                          : (_currentPage == 2 ? 'Get Started' : 'Continue'),
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -147,100 +143,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget buildPage({
+  // A single, unified page builder for better consistency
+  Widget _buildPage({
     required String title,
-    required String subtitle,
     required String description,
-    required String imageAsset,
-    bool showImage = true,
-    Color? startColor,
-    Color? endColor,
-    Color textColor = Colors.black,
+    required String image,
+    required Color bgColor,
+    required bool isDark,
   }) {
-    return Container(
-      decoration: BoxDecoration(color: startColor),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Welcome to\nHearingHands",
-              style: TextStyle(
-                fontSize: 38,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              "Let's learn Filipino Sign Language together",
-              style: TextStyle(fontSize: 14, color: textColor),
-            ),
-            const SizedBox(height: 40),
-            Center(
-              child: Image.asset(
-                imageAsset,
-                width: 250,
-                height: 250,
-                fit: BoxFit.contain,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: Text(
-                "Start your journey to learn Filipino Sign Language with ease.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: textColor),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    final Color textColor = isDark ? Colors.white : Colors.black87;
 
-  Widget buildCenteredPage({
-    required String title,
-    required String description,
-    required String imageAsset,
-    Color textColor = Colors.black,
-  }) {
     return Container(
-      color: Colors.white,
+      color: bgColor,
+      padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 30),
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20)),
-            child: Image.asset(
-              imageAsset,
-              width: 360,
-              height: 340,
-              fit: BoxFit.cover,
+          // Image Area
+          Image.asset(image, height: 280, fit: BoxFit.contain),
+          const SizedBox(height: 40),
+          // Text Area
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : primaryGreen,
             ),
           ),
-          const SizedBox(height: 30),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-            child: Column(
-              children: [
-                Text(title,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold,
-                        color: textColor)),
-                const SizedBox(height: 10),
-                Text(description,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: textColor)),
-              ],
+          const SizedBox(height: 16),
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              color: textColor.withValues(alpha: 0.8),
+              height: 1.5,
             ),
           ),
+          const SizedBox(height: 100), // Space for the bottom UI
         ],
       ),
     );

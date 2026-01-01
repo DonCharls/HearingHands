@@ -32,6 +32,18 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+subprojects {
+    project.configurations.all {
+        resolutionStrategy.eachDependency {
+            // Kotlin uses double quotes "" for strings
+            if (requested.group == "androidx.activity") {
+                // Kotlin needs parentheses () for function calls
+                useVersion("1.9.3")
+            }
+        }
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
