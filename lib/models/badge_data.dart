@@ -65,22 +65,19 @@ final List<Map<String, dynamic>> allBadges = [
     "title": "Number Ninja",
     "desc": "Complete the Numbers 1-10 lesson.",
     "image": "assets/images/awards/numberninja.png",
-    "check": (Map<String, dynamic> data) =>
-        false, // TODO: Connect when numbers lesson exists
+    "check": (Map<String, dynamic> data) => false,
   },
   {
     "title": "Greetings Guru",
     "desc": "Master basic greetings and phrases.",
     "image": "assets/images/awards/greetingsguru.png",
-    "check": (Map<String, dynamic> data) =>
-        false, // TODO: Connect when greetings lesson exists
+    "check": (Map<String, dynamic> data) => false,
   },
   {
     "title": "Feelings Friend",
     "desc": "Learn how to express emotions in signs.",
     "image": "assets/images/awards/feelingsfriend.png",
-    "check": (Map<String, dynamic> data) =>
-        false, // TODO: Connect when feelings lesson exists
+    "check": (Map<String, dynamic> data) => false,
   },
 
   // ==========================================
@@ -96,21 +93,18 @@ final List<Map<String, dynamic>> allBadges = [
     "title": "Dictionary Explorer",
     "desc": "Visit the Dictionary tab.",
     "image": "assets/images/awards/dictionaryexplorer.png",
-    "check": (Map<String, dynamic> data) =>
-        false, // TODO: Add flag when user visits dictionary
+    "check": (Map<String, dynamic> data) => false,
   },
   {
     "title": "Quiz Rookie",
     "desc": "Take your first Sign Language Quiz.",
     "image": "assets/images/awards/quizrookie.png",
-    "check": (Map<String, dynamic> data) =>
-        false, // TODO: Connect to Quiz logic
+    "check": (Map<String, dynamic> data) => false,
   },
   {
     "title": "Quiz Whiz",
     "desc": "Get a perfect score (10/10) on a quiz.",
     "image": "assets/images/awards/quizwhiz.png",
-    "check": (Map<String, dynamic> data) =>
-        false, // TODO: Connect to Quiz logic
+    "check": (Map<String, dynamic> data) => false,
   },
 ];

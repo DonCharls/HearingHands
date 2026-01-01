@@ -1,230 +1,214 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../games/sign_sprint.dart'; // Import your game file
 
-class Games extends StatefulWidget {
+class Games extends StatelessWidget {
   const Games({super.key});
 
-  @override
-  State<Games> createState() => _GamesState();
-}
-
-class _GamesState extends State<Games> {
-  bool hasStartedLearning = false;
-  int lessonsCompleted = 0;
-  int dailyStreak = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProgress();
-  }
-
-  Future<void> _loadProgress() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      lessonsCompleted = prefs.getInt('lessonsCompleted') ?? 0;
-      dailyStreak = prefs.getInt('dailyStreak') ?? 0;
-      hasStartedLearning = lessonsCompleted > 0;
-    });
-  }
+  // Using your app's primary green
+  final Color primaryColor = const Color(0xFF58C56E);
 
   @override
   Widget build(BuildContext context) {
+    final String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF6FDF8), // subtle light green background
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('HearingHands'),
-        backgroundColor: const Color(0xFF58C56E),
-        foregroundColor: Colors.white,
-        elevation: 0,
+      backgroundColor: Colors.white, // Clean white background like lessons
+      body: SafeArea(
+        child: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            int highScore = 0;
+            if (snapshot.hasData && snapshot.data!.exists) {
+              final data = snapshot.data!.data() as Map<String, dynamic>?;
+              highScore = data?['gameHighScore'] ?? 0;
+            }
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- 1. HEADER SECTION (Consistent with Lessons) ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Text(
+                            'Ready to play?',
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor, // Consistent Color
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // --- 2. GAME CARDS ---
+
+                  // GAME 1: SIGN SPRINT (Live)
+                  _buildGameCard(
+                    context,
+                    title: "Sign Sprint",
+                    subtitle: "Race against the clock to match signs!",
+                    imagePath:
+                        "assets/images/awards/quicklearner.png", // Use an existing asset as icon
+                    score: "$highScore pts",
+                    primaryColor: primaryColor,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SignSprintGame()),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // GAME 2: COMING SOON (Locked)
+                  _buildGameCard(
+                    context,
+                    title: "Memory Match",
+                    subtitle: "Find the matching pairs of signs.",
+                    imagePath:
+                        "assets/images/locked.png", // Use your locked asset
+                    score: "Locked",
+                    primaryColor: Colors.grey,
+                    isLocked: true,
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text("Coming soon! Master your lessons first."),
+                          backgroundColor: Colors.grey,
+                          duration: Duration(milliseconds: 800),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
-      body: SingleChildScrollView(
+    );
+  }
+
+  // --- REUSABLE CARD WIDGET ---
+  Widget _buildGameCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required String imagePath,
+    required String score,
+    required Color primaryColor,
+    required VoidCallback onTap,
+    bool isLocked = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
         padding: const EdgeInsets.all(20),
-        child: hasStartedLearning
-            ? _buildReturningUserContent()
-            : _buildFirstTimeUserContent(),
-      ),
-    );
-  }
-
-  Widget _buildFirstTimeUserContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Welcome to HearingHands!",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF213F28),
-          ),
-        ),
-        const SizedBox(height: 10),
-        const Text(
-          "Start your journey learning Filipino Sign Language.",
-          style: TextStyle(fontSize: 17, color: Colors.black87),
-        ),
-        const SizedBox(height: 30),
-        _buildCTAButton(
-          icon: Icons.rocket_launch,
-          label: "Start your first lesson",
-          onPressed: () => Navigator.pushNamed(context, '/lessons/start'),
-        ),
-        const SizedBox(height: 16),
-        _buildOutlineButton(
-          icon: Icons.menu_book_outlined,
-          label: "Explore all lessons",
-          onPressed: () => Navigator.pushNamed(context, '/lessons'),
-        ),
-        const SizedBox(height: 16),
-        _buildOutlineButton(
-          icon: Icons.translate,
-          label: "Try translating something",
-          onPressed: () => Navigator.pushNamed(context, '/translate'),
-        ),
-        const SizedBox(height: 40),
-        _buildTipCard(
-            "💡 Did you know?", "You can use fingerspelling to sign any name!"),
-      ],
-    );
-  }
-
-  Widget _buildReturningUserContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "👋 Welcome back!",
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF213F28),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+        decoration: BoxDecoration(
           color: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(18.0),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.check_circle,
-                        color: Color(0xFF58C56E), size: 22),
-                    const SizedBox(width: 10),
-                    Text(
-                      "Lessons completed: $lessonsCompleted",
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(Icons.bolt_rounded,
-                        color: Color(0xFF4F965E), size: 22),
-                    const SizedBox(width: 10),
-                    Text(
-                      "Streak: $dailyStreak days",
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
-                ),
-              ],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: isLocked
+                  ? Colors.grey.shade200
+                  : primaryColor.withOpacity(0.3),
+              width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: primaryColor.withOpacity(isLocked ? 0.0 : 0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 30),
-        _buildCTAButton(
-          icon: Icons.play_arrow_rounded,
-          label: "Continue where you left off",
-          onPressed: () => Navigator.pushNamed(context, '/lessons/continue'),
-        ),
-        const SizedBox(height: 16),
-        _buildOutlineButton(
-          icon: Icons.menu_book_outlined,
-          label: "Browse all lessons",
-          onPressed: () => Navigator.pushNamed(context, '/lessons'),
-        ),
-        const SizedBox(height: 16),
-        _buildOutlineButton(
-          icon: Icons.translate,
-          label: "Start a translation",
-          onPressed: () => Navigator.pushNamed(context, '/translate'),
-        ),
-        const SizedBox(height: 40),
-        _buildTipCard("💡 Tip", "Keep learning daily to grow your streak!"),
-      ],
-    );
-  }
-
-  Widget _buildCTAButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      icon: Icon(icon, size: 24),
-      label: Text(label, style: const TextStyle(fontSize: 16)),
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF58C56E),
-        foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOutlineButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return OutlinedButton.icon(
-      icon: Icon(icon, size: 22, color: const Color(0xFF58C56E)),
-      label: Text(
-        label,
-        style: const TextStyle(fontSize: 16, color: Color(0xFF58C56E)),
-      ),
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFF58C56E), width: 2),
-        minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTipCard(String title, String message) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F9EF),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.lightbulb_outline, color: Color(0xFF58C56E)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              "$title\n$message",
-              style: const TextStyle(fontSize: 15, color: Color(0xFF213F28)),
+        child: Row(
+          children: [
+            // Icon / Image
+            Container(
+              height: 60,
+              width: 60,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isLocked
+                    ? Colors.grey.shade100
+                    : primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Image.asset(imagePath,
+                  color: isLocked ? Colors.grey : null, // Grayscale if locked
+                  fit: BoxFit.contain),
             ),
-          ),
-        ],
+
+            const SizedBox(width: 20),
+
+            // Text Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isLocked ? Colors.grey : Colors.black87),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                        fontSize: 12, color: Colors.grey.shade600, height: 1.2),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Score Tag
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isLocked
+                          ? Colors.grey.shade200
+                          : primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      isLocked ? "Coming Soon" : "High Score: $score",
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isLocked ? Colors.grey : primaryColor),
+                    ),
+                  )
+                ],
+              ),
+            ),
+
+            // Play / Lock Icon
+            Icon(
+              isLocked ? Icons.lock_outline : Icons.play_circle_fill,
+              color: isLocked ? Colors.grey.shade300 : primaryColor,
+              size: 32,
+            ),
+          ],
+        ),
       ),
     );
   }

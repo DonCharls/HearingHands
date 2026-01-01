@@ -3,8 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../create_account.dart';
 import '../sign_in.dart';
-
-// IMPORT THE NEW DATA FILE
+// IMPORT THE BADGE DATA
 import '../../models/badge_data.dart';
 
 class Awards extends StatefulWidget {
@@ -41,7 +40,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: const Text(
-          "Achievements Hub", // Updated Title per our discussion
+          "Achievements Hub",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xFF58C56E),
@@ -71,7 +70,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- UPDATED GUEST VIEW (Consistent with Profile) ---
+  // --- GUEST VIEW ---
   Widget _buildGuestView() {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -81,11 +80,11 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 10),
-              Image.asset('assets/images/locked.png', height: 180, width: 180),
+              Image.asset('assets/images/locked.png',
+                  width: 180, height: 180, fit: BoxFit.contain),
               const SizedBox(height: 30),
               const Text(
-                "Unlock Your Achievements!",
+                "Awards Locked",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 24,
@@ -94,14 +93,12 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
               ),
               const SizedBox(height: 15),
               const Text(
-                "Sign in to track your Filipino Sign Language progress and compete on the leaderboard.",
+                "Sign in to track your badges, compete on the leaderboard, and save your game high scores.",
                 textAlign: TextAlign.center,
                 style:
                     TextStyle(fontSize: 15, color: Colors.black54, height: 1.5),
               ),
               const SizedBox(height: 40),
-
-              // PRIMARY BUTTON: Create Account
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -125,10 +122,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                           fontWeight: FontWeight.bold)),
                 ),
               ),
-
               const SizedBox(height: 12),
-
-              // SECONDARY BUTTON: Sign In
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -158,7 +152,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- TAB 1: BADGES (Now using allBadges from data file) ---
+  // --- TAB 1: BADGES ---
   Widget _buildBadgesTab() {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
@@ -173,7 +167,6 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
         Map<String, dynamic> userData =
             snapshot.data!.data() as Map<String, dynamic>? ?? {};
 
-        // Calculate progress using imported 'allBadges'
         int unlockedCount = 0;
         for (var rule in allBadges) {
           if (rule['check'](userData)) unlockedCount++;
@@ -183,7 +176,6 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
 
         return Column(
           children: [
-            // Progress Header
             Container(
               padding: const EdgeInsets.all(20),
               color: Colors.white,
@@ -216,8 +208,6 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                 ],
               ),
             ),
-
-            // Badge Grid
             Expanded(
               child: GridView.builder(
                 padding: const EdgeInsets.all(16),
@@ -227,7 +217,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
-                itemCount: allBadges.length, // Uses updated list
+                itemCount: allBadges.length,
                 itemBuilder: (context, index) {
                   final badge = allBadges[index];
                   final bool isUnlocked = badge['check'](userData);
@@ -255,8 +245,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                                 errorBuilder: (_, __, ___) => const Icon(
                                     Icons.emoji_events,
                                     size: 40,
-                                    color: Colors
-                                        .grey)), // Handle missing images gracefully
+                                    color: Colors.grey)),
                           ),
                           const SizedBox(height: 10),
                           Padding(
@@ -293,7 +282,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- TAB 2: LEADERBOARD ---
+  // --- TAB 2: LEADERBOARD (Improved UX + Bug Fix) ---
   Widget _buildLeaderboardTab() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -312,8 +301,19 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
 
         final users = snapshot.data!.docs;
 
+        // UX IMPROVEMENT: Delightful Zero State
         if (users.isEmpty) {
-          return const Center(child: Text("No learners yet. Start a lesson!"));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset('assets/images/groupbear.png', height: 120),
+                const SizedBox(height: 20),
+                const Text("No learners yet. Be the first!",
+                    style: TextStyle(color: Colors.grey)),
+              ],
+            ),
+          );
         }
 
         return ListView.builder(
@@ -323,15 +323,27 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
             final userDoc = users[index].data() as Map<String, dynamic>;
             final String name = userDoc['fullName'] ?? 'Learner';
             final int signs = userDoc['signsLearned'] ?? 0;
+            final int gameScore = userDoc['gameHighScore'] ?? 0;
             final bool isMe = users[index].id == currentUserId;
+
+            // UX IMPROVEMENT: Top 3 Visual Hierarchy
+            Color? borderColor;
+            if (index == 0)
+              borderColor = const Color(0xFFFFD700); // Gold
+            else if (index == 1)
+              borderColor = const Color(0xFFC0C0C0); // Silver
+            else if (index == 2)
+              borderColor = const Color(0xFFCD7F32); // Bronze
+            else if (isMe) borderColor = const Color(0xFF58C56E); // Me
 
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
                 color: isMe ? const Color(0xFFF0FDF4) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: isMe
-                    ? Border.all(color: const Color(0xFF58C56E), width: 1.5)
+                // Custom border for Top 3 or User
+                border: borderColor != null
+                    ? Border.all(color: borderColor, width: isMe ? 2 : 1)
                     : null,
                 boxShadow: [
                   BoxShadow(
@@ -346,21 +358,23 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                 leading: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (index == 0)
-                      const Text("🥇", style: TextStyle(fontSize: 22))
-                    else if (index == 1)
-                      const Text("🥈", style: TextStyle(fontSize: 22))
-                    else if (index == 2)
-                      const Text("🥉", style: TextStyle(fontSize: 22))
-                    else
-                      SizedBox(
-                          width: 24,
-                          child: Text("#${index + 1}",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey))),
-                    const SizedBox(width: 12),
+                    // Rank Icons
+                    SizedBox(
+                      width: 30,
+                      child: index == 0
+                          ? const Text("🥇", style: TextStyle(fontSize: 24))
+                          : index == 1
+                              ? const Text("🥈", style: TextStyle(fontSize: 24))
+                              : index == 2
+                                  ? const Text("🥉",
+                                      style: TextStyle(fontSize: 24))
+                                  : Text("#${index + 1}",
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey)),
+                    ),
+                    const SizedBox(width: 8),
                     CircleAvatar(
                       radius: 20,
                       backgroundColor: Colors.grey.shade200,
@@ -372,11 +386,32 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                   ],
                 ),
                 title: Text(name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                         fontWeight: isMe ? FontWeight.bold : FontWeight.w500)),
-                subtitle: Text("$signs FSL Signs",
-                    style: const TextStyle(
-                        color: Color(0xFF58C56E), fontWeight: FontWeight.bold)),
+
+                // --- CRITICAL BUG FIX ---
+                // Used Flexible and TextOverflow to prevent pixel overflow
+                subtitle: Row(
+                  children: [
+                    Text("$signs Signs",
+                        style: const TextStyle(
+                            color: Color(0xFF58C56E),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13)),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        "• Score: $gameScore",
+                        style:
+                            const TextStyle(color: Colors.grey, fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
+                ),
                 trailing:
                     isMe ? const Icon(Icons.star, color: Colors.orange) : null,
               ),
