@@ -42,7 +42,6 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
       "image": "assets/images/awards/alphabetace.png",
       "check": (data) => data['lesson_yz_done'] == true,
     },
-    // Add more badge rules here as you build more features!
   ];
 
   @override
@@ -98,8 +97,9 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
           .doc(currentUserId)
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
 
         Map<String, dynamic> userData =
             snapshot.data!.data() as Map<String, dynamic>? ?? {};
@@ -171,7 +171,8 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              // UPDATED: Modern syntax
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 6,
                               offset: const Offset(0, 2))
                         ],
@@ -223,13 +224,12 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- TAB 2: LEADERBOARD (Updated to use 'signsLearned') ---
+  // --- TAB 2: LEADERBOARD ---
   Widget _buildLeaderboardTab() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('users')
-          .orderBy('signsLearned',
-              descending: true) // <--- Sorting by FSL Signs
+          .orderBy('signsLearned', descending: true)
           .limit(20)
           .snapshots(),
       builder: (context, snapshot) {
@@ -253,24 +253,21 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
           itemBuilder: (context, index) {
             final userDoc = users[index].data() as Map<String, dynamic>;
             final String name = userDoc['fullName'] ?? 'Learner';
-            final int signs =
-                userDoc['signsLearned'] ?? 0; // Get the calculated score
-            final String? photoUrl = userDoc['profileImage'];
+            final int signs = userDoc['signsLearned'] ?? 0;
             final bool isMe = users[index].id == currentUserId;
 
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: isMe
-                    ? const Color(0xFFF0FDF4)
-                    : Colors.white, // Light green for current user
+                color: isMe ? const Color(0xFFF0FDF4) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: isMe
                     ? Border.all(color: const Color(0xFF58C56E), width: 1.5)
                     : null,
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.grey.withOpacity(0.08),
+                      // UPDATED: Modern syntax
+                      color: Colors.grey.withValues(alpha: 0.08),
                       spreadRadius: 1,
                       blurRadius: 4)
                 ],
@@ -303,12 +300,11 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                     CircleAvatar(
                       radius: 20,
                       backgroundColor: Colors.grey.shade200,
-                      backgroundImage:
-                          photoUrl != null ? NetworkImage(photoUrl) : null,
-                      child: photoUrl == null
-                          ? const Icon(Icons.person,
-                              color: Colors.grey, size: 20)
-                          : null,
+                      // FIXED: Used 'userDoc' instead of undefined 'user'
+                      backgroundImage: (userDoc['profileImage'] != null)
+                          ? AssetImage(userDoc['profileImage'])
+                          : const AssetImage(
+                              'assets/images/avatar/avatar_a.png'),
                     ),
                   ],
                 ),
@@ -342,7 +338,8 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
           children: [
             Image.asset(badge['image'],
                 height: 100,
-                color: isUnlocked ? null : Colors.black.withOpacity(0.2),
+                // UPDATED: Modern syntax for color blending
+                color: isUnlocked ? null : Colors.black.withValues(alpha: 0.2),
                 colorBlendMode: isUnlocked ? null : BlendMode.srcATop),
             const SizedBox(height: 20),
             Text(badge['title'],
