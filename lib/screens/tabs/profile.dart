@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../create_account.dart';
 import '../sign_in.dart';
 import '../../splash_screen.dart';
-import 'awards.dart'; // Import awards if you want the link to work
+import 'awards.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -21,12 +21,11 @@ class _ProfileState extends State<Profile> {
   Map<String, dynamic>? userData;
   bool isLoading = false;
 
-  // UPDATED: Default picture now points to the first numbered avatar
+  // Default picture points to the first numbered avatar
   String profileImage = 'assets/images/avatar/avatar_1.png';
 
-  // UPDATED: Generate list of avatars (1 to 32)
+  // Generate list of avatars (1 to 32)
   final List<String> availableAvatars = List.generate(32, (index) {
-    // index starts at 0, so we add 1 to get avatar_1, avatar_2, etc.
     return 'assets/images/avatar/avatar_${index + 1}.png';
   });
 
@@ -179,7 +178,6 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      // Adding the braces {} satisfies the 'curly_braces_in_flow_control_structures' rule
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: Color(0xFF58C56E)),
@@ -205,7 +203,6 @@ class _ProfileState extends State<Profile> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              // CLEANER CODE: We just call the custom widgets here!
               ProfileHeader(
                 name: userData?['fullName'] ?? 'Learner',
                 imagePath: profileImage,
@@ -216,15 +213,10 @@ class _ProfileState extends State<Profile> {
                 onEdit: _showAvatarPicker,
               ),
               const SizedBox(height: 24),
-
               StatsGrid(streak: streakCount, signs: signsCount),
-
               const SizedBox(height: 24),
-
               const AchievementsTeaser(),
-
               const SizedBox(height: 30),
-
               // Settings Group
               Container(
                 decoration: BoxDecoration(
@@ -264,55 +256,107 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  // --- UPDATED GUEST VIEW (Matches Awards Design) ---
   Widget _buildGuestView() {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.all(30),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/locked.png',
-              width: 180, // Adjust size to fit your layout
-              height: 180,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(height: 20),
-            const Text("Profile Locked",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            const Text("Log in to track your streak and choose your avatar!",
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(30),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 1. Image
+              Image.asset(
+                'assets/images/locked.png',
+                width: 180,
+                height: 180,
+                fit: BoxFit.contain,
+              ),
+
+              const SizedBox(height: 30),
+
+              // 2. Title - Green & Bold
+              const Text(
+                "Profile Locked",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF58C56E),
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF58C56E), // Matches Brand Color
+                ),
               ),
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SignInScreen())),
-              child: const Text("Log In",
-                  style: TextStyle(color: Colors.white, fontSize: 16)),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+
+              const SizedBox(height: 15),
+
+              // 3. Body text
+              const Text(
+                "Log in to track your streak, customize your avatar, and see your progress statistics.",
+                textAlign: TextAlign.center,
+                style:
+                    TextStyle(fontSize: 15, color: Colors.black54, height: 1.5),
               ),
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const CreateAccountScreen())),
-              child: const Text("Create Account",
-                  style: TextStyle(color: Color(0xFF58C56E))),
-            )
-          ],
+
+              const SizedBox(height: 40),
+
+              // 4. Primary Button: Create Account (Green)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const CreateAccountScreen()));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF58C56E),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    "Create an Account",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // 5. Secondary Button: Sign In (Outlined)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SignInScreen()));
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF58C56E), width: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text(
+                    "Sign In",
+                    style: TextStyle(
+                      color: Color(0xFF58C56E),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -320,8 +364,7 @@ class _ProfileState extends State<Profile> {
 }
 
 // ==========================================================
-//   REFACTORED WIDGETS (Keep these at the bottom of file)
-//   This makes the main code above much smaller!
+//   REFACTORED WIDGETS
 // ==========================================================
 
 class ProfileHeader extends StatelessWidget {
