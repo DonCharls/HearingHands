@@ -193,7 +193,7 @@ class _LessonTemplateState extends State<LessonTemplate> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: primaryGreen.withOpacity(0.05),
+              color: primaryGreen.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(30),
             ),
             child: Image.asset(
@@ -280,7 +280,7 @@ class _LessonTemplateState extends State<LessonTemplate> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4))
                     ],
@@ -351,7 +351,7 @@ class _LessonTemplateState extends State<LessonTemplate> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4))
               ],
@@ -404,7 +404,7 @@ class _LessonTemplateState extends State<LessonTemplate> {
                     border: Border.all(color: Colors.grey.shade300, width: 2),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 5,
                           offset: const Offset(0, 4))
                     ],

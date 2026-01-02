@@ -31,13 +31,14 @@ class _DictionaryState extends State<Dictionary> {
     });
   }
 
-  // --- REPAIRED DIALOG (No more overflow) ---
+  // --- UPGRADE 1: "Focus" Dialog ---
+  // Removed clutter, maximized image size.
   void _showImageDialog(BuildContext context, String letter) {
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
         barrierDismissible: true,
-        barrierColor: Colors.black54,
+        barrierColor: Colors.black87, // Darker background for focus
         pageBuilder: (context, _, __) {
           return Center(
             child: Hero(
@@ -45,89 +46,94 @@ class _DictionaryState extends State<Dictionary> {
               child: Material(
                 color: Colors.transparent,
                 child: Container(
-                  width: MediaQuery.of(context).size.width * 0.85,
-                  // We limit the total height of the dialog to 80% of the screen
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  // Allowed to take up more vertical space
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.8,
+                    maxHeight: MediaQuery.of(context).size.height * 0.7,
                   ),
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      )
+                          color: Colors.white.withValues(alpha: 0.1),
+                          blurRadius: 20,
+                          spreadRadius: 2)
                     ],
                   ),
-                  // SingleChildScrollView handles very small screens
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Letter ${letter.toUpperCase()}",
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: fslPrimaryGreen,
-                              ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Clean Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Letter ${letter.toUpperCase()}",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.close, color: Colors.grey),
-                              onPressed: () => Navigator.pop(context),
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        // FIXED: Constrained Image Container
-                        Container(
-                          // Dynamic height based on screen size (Max 30% of screen)
-                          constraints: BoxConstraints(
-                            maxHeight:
-                                MediaQuery.of(context).size.height * 0.35,
                           ),
-                          padding: const EdgeInsets.all(10),
+                          // Circle Close Button
+                          InkWell(
+                            onTap: () => Navigator.pop(context),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  shape: BoxShape.circle),
+                              child: const Icon(Icons.close,
+                                  color: Colors.black54),
+                            ),
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // MAXIMIZED IMAGE
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
                           decoration: BoxDecoration(
                             color: fslPrimaryGreen.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Image.asset(
-                            'assets/images/dictionary/$letter.jpg',
-                            fit: BoxFit.contain,
-                            errorBuilder: (ctx, err, stack) => Icon(
-                              Icons.image_not_supported,
-                              size: 80,
-                              color: Colors.grey.shade300,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: fslPrimaryGreen,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.asset(
+                              'assets/images/dictionary/$letter.jpg',
+                              fit: BoxFit.contain,
+                              errorBuilder: (ctx, err, stack) => Icon(
+                                Icons.broken_image_rounded,
+                                size: 60,
+                                color: Colors.grey.shade300,
                               ),
                             ),
-                            child: const Text("Got it!",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16)),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Helpful Tip instead of Big Button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.touch_app,
+                              size: 16, color: fslPrimaryGreen),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Practice mirroring this sign",
+                            style: TextStyle(
+                                color: fslPrimaryGreen,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      )
+                    ],
                   ),
                 ),
               ),
@@ -141,8 +147,7 @@ class _DictionaryState extends State<Dictionary> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset:
-          false, // Prevents keyboard from squishing the UI
+      resizeToAvoidBottomInset: false,
       backgroundColor: bgGrey,
       appBar: AppBar(
         title: const Text("FSL Dictionary",
@@ -154,6 +159,7 @@ class _DictionaryState extends State<Dictionary> {
       ),
       body: Column(
         children: [
+          // Header Search Section
           Container(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 25),
             decoration: BoxDecoration(
@@ -169,38 +175,51 @@ class _DictionaryState extends State<Dictionary> {
                     offset: const Offset(0, 5),
                   ),
                 ]),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _filterSearch,
-              style: const TextStyle(color: Colors.black87),
-              decoration: InputDecoration(
-                hintText: "Search a letter (e.g. 'A')",
-                hintStyle: TextStyle(color: Colors.grey.shade500),
-                prefixIcon: Icon(Icons.search, color: fslPrimaryGreen),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.grey),
-                        onPressed: () {
-                          _searchController.clear();
-                          _filterSearch('');
-                          FocusScope.of(context).unfocus();
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _searchController,
+                  onChanged: _filterSearch,
+                  style: const TextStyle(color: Colors.black87),
+                  decoration: InputDecoration(
+                    hintText: "Search a letter...",
+                    hintStyle: TextStyle(color: Colors.grey.shade500),
+                    prefixIcon: Icon(Icons.search, color: fslPrimaryGreen),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.grey),
+                            onPressed: () {
+                              _searchController.clear();
+                              _filterSearch('');
+                              FocusScope.of(context).unfocus();
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+                // Results Count (Nice Feedback)
+                if (_searchController.text.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10, left: 10),
+                    child: Text(
+                      "Found ${_filteredAlphabet.length} result(s)",
+                      style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 12),
+                    ),
+                  )
+              ],
             ),
           ),
+
           Expanded(
             child: _filteredAlphabet.isEmpty
                 ? _buildEmptyState()
@@ -211,7 +230,8 @@ class _DictionaryState extends State<Dictionary> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: 0.8,
+                      childAspectRatio:
+                          0.85, // Slightly taller for better proportions
                     ),
                     itemCount: _filteredAlphabet.length,
                     itemBuilder: (context, index) {
@@ -225,6 +245,7 @@ class _DictionaryState extends State<Dictionary> {
     );
   }
 
+  // --- UPGRADE 2: "Polaroid" Style Card ---
   Widget _buildFlashcard(BuildContext context, String letter) {
     return GestureDetector(
       onTap: () => _showImageDialog(context, letter),
@@ -239,34 +260,17 @@ class _DictionaryState extends State<Dictionary> {
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.shade200,
-                  blurRadius: 8,
+                  blurRadius: 10,
                   offset: const Offset(0, 4),
                 )
               ],
             ),
-            child: Column(
+            child: Stack(
               children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: fslPrimaryGreen.withValues(alpha: 0.1),
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  child: Text(
-                    letter.toUpperCase(),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: fslPrimaryGreen,
-                    ),
-                  ),
-                ),
-                Expanded(
+                // 1. The Image (Centered & Large)
+                Positioned.fill(
                   child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.all(20.0),
                     child: Image.asset(
                       'assets/images/dictionary/$letter.jpg',
                       fit: BoxFit.contain,
@@ -278,11 +282,39 @@ class _DictionaryState extends State<Dictionary> {
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    "Tap to enlarge",
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+
+                // 2. The Badge (Clean, Modern, Top Right)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: fslPrimaryGreen.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        letter.toUpperCase(),
+                        style: TextStyle(
+                          color: fslPrimaryGreen,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // 3. Subtle "View" Icon (Bottom Right)
+                Positioned(
+                  bottom: 12,
+                  right: 12,
+                  child: Icon(
+                    Icons.zoom_in_rounded,
+                    color: Colors.grey.shade300,
+                    size: 20,
                   ),
                 )
               ],

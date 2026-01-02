@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 
 class SignSprintGame extends StatefulWidget {
   const SignSprintGame({super.key});
@@ -20,13 +21,22 @@ class _SignSprintGameState extends State<SignSprintGame> {
   int score = 0;
   int lives = 3;
   int timerSeconds = 10;
+  int maxTime = 10; // New: Used for progress bar calculation
   Timer? _timer;
   bool isGameOver = false;
   bool isHighLoading = false;
 
-  // --- CURRENT QUESTION DATA ---
+  // --- UI STATE ---
+  String bearState = 'running';
+  Color screenFlashColor = Colors.transparent;
+  bool showSpeedUpLabel = false;
+  int streak = 0; // New: Streak Counter
+
   late String currentLetter;
   late List<String> options;
+
+  int? selectedButtonIndex;
+  bool? wasSelectionCorrect;
 
   @override
   void initState() {
@@ -34,15 +44,13 @@ class _SignSprintGameState extends State<SignSprintGame> {
     _generateNewQuestion();
   }
 
-  // --- 1. DYNAMIC TIMER LOGIC ---
   void _startTimer() {
     _timer?.cancel();
-
-    // LOGIC: Start at 10s. Every 20 points, reduce time by 1s.
-    // .clamp(3, 10) ensures it never goes above 10s or below 3s.
+    // Calculate difficulty
     int dynamicTime = (10 - (score ~/ 20)).clamp(3, 10);
 
     setState(() {
+      maxTime = dynamicTime; // Set max time for this round (for the ring)
       timerSeconds = dynamicTime;
     });
 
@@ -59,85 +67,97 @@ class _SignSprintGameState extends State<SignSprintGame> {
     });
   }
 
-  // --- 2. QUESTION GENERATION ---
   void _generateNewQuestion() {
     if (lives <= 0) return;
 
-    // Pick 1 random correct letter
+    setState(() {
+      selectedButtonIndex = null;
+      wasSelectionCorrect = null;
+      screenFlashColor = Colors.transparent;
+    });
+
     currentLetter = alphabet[Random().nextInt(alphabet.length)];
     options = [currentLetter];
 
-    // Pick 3 random WRONG letters
     while (options.length < 4) {
       String randomLetter = alphabet[Random().nextInt(alphabet.length)];
       if (!options.contains(randomLetter)) {
         options.add(randomLetter);
       }
     }
-    options.shuffle(); // Mix them up
-    _startTimer(); // Restart the clock
+    options.shuffle();
+    _startTimer();
   }
 
-  // --- 3. ANSWER CHECKING ---
-  void _handleAnswer(String selected) {
-    if (isGameOver) return;
+  void _triggerSpeedUpAlert() {
+    setState(() => showSpeedUpLabel = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => showSpeedUpLabel = false);
+    });
+  }
+
+  void _handleAnswer(String selected, int index) {
+    if (isGameOver || selectedButtonIndex != null) return;
+
+    setState(() {
+      selectedButtonIndex = index;
+    });
 
     if (selected == currentLetter) {
-      // CORRECT
+      HapticFeedback.lightImpact();
       setState(() {
         score += 10;
+        streak++; // Increment streak
+        bearState = 'correct';
+        wasSelectionCorrect = true;
+        screenFlashColor = Colors.green.withValues(alpha: 0.1);
       });
 
-      // Show "Speed Up" warning every 20 points
-      if (score > 0 && score % 20 == 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("⚡ SPEED UP! The timer is getting faster!"),
-            backgroundColor: Colors.orange,
-            duration: Duration(milliseconds: 800),
-          ),
-        );
-      }
+      if (score > 0 && score % 150 == 0) _triggerSpeedUpAlert();
 
-      _generateNewQuestion();
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && !isGameOver) {
+          setState(() => bearState = 'running');
+          _generateNewQuestion();
+        }
+      });
     } else {
-      // WRONG
-      _handleWrongAnswer();
+      _handleWrongAnswer(isTimeout: false);
     }
   }
 
   void _handleWrongAnswer({bool isTimeout = false}) {
     _timer?.cancel();
+    HapticFeedback.heavyImpact();
 
     setState(() {
       lives--;
+      streak = 0; // Reset streak
+      bearState = 'wrong';
+      if (!isTimeout) wasSelectionCorrect = false;
+      screenFlashColor = Colors.red.withValues(alpha: 0.15);
     });
 
-    // Vibration/Feedback could go here
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(isTimeout ? "⏰ Time's up! -1 ❤️" : "❌ Wrong! -1 ❤️"),
-        backgroundColor: Colors.redAccent,
-        duration: const Duration(milliseconds: 500),
-      ),
-    );
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted && lives > 0) {
+        setState(() => bearState = 'running');
+        if (mounted && !isGameOver) _generateNewQuestion();
+      }
+    });
 
     if (lives <= 0) {
-      _endGame();
-    } else {
-      // Give a small delay before next question so they realize they messed up
       Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted && !isGameOver) _generateNewQuestion();
+        _endGame();
       });
     }
   }
 
-  // --- 4. GAME OVER & FIREBASE SAVE ---
   Future<void> _endGame() async {
     _timer?.cancel();
     setState(() {
       isGameOver = true;
       isHighLoading = true;
+      screenFlashColor = Colors.transparent;
     });
 
     try {
@@ -145,21 +165,10 @@ class _SignSprintGameState extends State<SignSprintGame> {
       if (uid != null) {
         final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
         final doc = await userDoc.get();
-
-        // Check previous high score
         int currentHighScore = doc.data()?['gameHighScore'] ?? 0;
 
         if (score > currentHighScore) {
-          // New High Score!
           await userDoc.update({'gameHighScore': score});
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("🏆 NEW HIGH SCORE SAVED!"),
-                backgroundColor: Color(0xFF58C56E),
-              ),
-            );
-          }
         }
       }
     } catch (e) {
@@ -175,7 +184,6 @@ class _SignSprintGameState extends State<SignSprintGame> {
     super.dispose();
   }
 
-  // --- UI BUILDING ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -187,10 +195,60 @@ class _SignSprintGameState extends State<SignSprintGame> {
         foregroundColor: Colors.white,
         centerTitle: true,
         elevation: 0,
-        automaticallyImplyLeading:
-            false, // User must click "Exit" button to leave
+        automaticallyImplyLeading: false,
       ),
-      body: isGameOver ? _buildGameOverScreen() : _buildGameplayScreen(),
+      body: Stack(
+        children: [
+          isGameOver ? _buildGameOverScreen() : _buildGameplayScreen(),
+
+          IgnorePointer(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              color: screenFlashColor,
+            ),
+          ),
+
+          // Floating "Speed Up" Alert
+          Positioned(
+            top: 100,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: showSpeedUpLabel ? 1.0 : 0.0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4))
+                        ]),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.flash_on, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text("SPEED UP!",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -198,84 +256,108 @@ class _SignSprintGameState extends State<SignSprintGame> {
     return SafeArea(
       child: Column(
         children: [
-          // --- TOP STATS BAR ---
+          // --- TOP BAR ---
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             color: const Color(0xFFF5F7FA),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Hearts
-                Row(
-                  children: List.generate(
-                      3,
-                      (index) => Icon(
-                            index < lives
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: Colors.red,
-                            size: 28,
-                          )),
+                // Lives + Streak
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                        children: List.generate(
+                            3,
+                            (index) => Icon(
+                                index < lives
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: Colors.red,
+                                size: 24))),
+                    if (streak > 1)
+                      Text("🔥 $streak",
+                          style: const TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12))
+                  ],
                 ),
-                // Timer (Turns Red if low)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: timerSeconds <= 3 ? Colors.red : primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    "$timerSeconds",
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18),
-                  ),
+
+                // --- 10/10 UPGRADE: VISUAL TIMER RING ---
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 45,
+                      height: 45,
+                      child: CircularProgressIndicator(
+                        value: timerSeconds / maxTime, // Animates the ring
+                        strokeWidth: 4,
+                        backgroundColor: Colors.grey.shade300,
+                        // Color changes based on time left
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            timerSeconds <= 3 ? Colors.red : primaryColor),
+                      ),
+                    ),
+                    Text("$timerSeconds",
+                        style: TextStyle(
+                            color:
+                                timerSeconds <= 3 ? Colors.red : Colors.black87,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18)),
+                  ],
                 ),
+
                 // Score
-                Text(
-                  "Score: $score",
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                Text("Score: $score",
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
 
           const Spacer(),
 
-          // --- QUESTION CARD ---
+          // --- 10/10 UPGRADE: ANIMATED QUESTION ---
           Column(
             children: [
-              const Text(
-                "Match the Sign!",
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
+              const Text("Match the Sign!",
+                  style: TextStyle(color: Colors.grey, fontSize: 16)),
               const SizedBox(height: 10),
-              Container(
-                height: 220,
-                width: 220,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: primaryColor.withValues(alpha: 0.3), width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryColor.withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ],
-                ),
-                child: Image.asset(
-                  // Logic to find the correct image
-                  'assets/images/dictionary/${currentLetter.toLowerCase()}.jpg',
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                      child: Icon(Icons.broken_image,
-                          size: 50, color: Colors.grey)),
+
+              // AnimatedSwitcher makes it fade/scale when 'currentLetter' changes
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return ScaleTransition(scale: animation, child: child);
+                },
+                // We use a Key so Flutter knows the widget changed
+                child: Container(
+                  key: ValueKey<String>(currentLetter),
+                  height: 220,
+                  width: 220,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: primaryColor.withValues(alpha: 0.3), width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                          color: primaryColor.withValues(alpha: 0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10))
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/images/dictionary/${currentLetter.toLowerCase()}.jpg',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Icon(Icons.broken_image,
+                            size: 50, color: Colors.grey)),
+                  ),
                 ),
               ),
             ],
@@ -283,28 +365,45 @@ class _SignSprintGameState extends State<SignSprintGame> {
 
           const Spacer(),
 
-          // --- MASCOT HELPER ---
-          // A small touch to make it feel familiar
-          if (!isGameOver)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset('assets/images/talkbearr.png', height: 40),
-                  const SizedBox(width: 10),
-                  const Text("Quick! Pick the letter!",
-                      style: TextStyle(
-                          color: Colors.grey, fontStyle: FontStyle.italic)),
-                ],
-              ),
+          // --- MASCOT ---
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Image.asset(
+                    key: ValueKey<String>(bearState),
+                    bearState == 'correct'
+                        ? 'assets/images/games/correct.png'
+                        : bearState == 'wrong'
+                            ? 'assets/images/games/wrong.png'
+                            : 'assets/images/games/running.png',
+                    height: 60,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  bearState == 'correct'
+                      ? "Awesome! Great job!"
+                      : bearState == 'wrong'
+                          ? "Oh no! Try again!"
+                          : "Quick! Pick the letter!",
+                  style: const TextStyle(
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w500),
+                ),
+              ],
             ),
+          ),
 
           // --- OPTIONS GRID ---
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: Color(0xFFF5F7FA), // The color itself is a constant
+              color: Color(0xFFF5F7FA),
               borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
             ),
             child: GridView.builder(
@@ -318,15 +417,31 @@ class _SignSprintGameState extends State<SignSprintGame> {
               ),
               itemCount: 4,
               itemBuilder: (context, index) {
+                Color btnColor = Colors.white;
+                Color txtColor = primaryColor;
+                if (selectedButtonIndex == index) {
+                  if (wasSelectionCorrect == true) {
+                    btnColor = Colors.green;
+                    txtColor = Colors.white;
+                  } else if (wasSelectionCorrect == false) {
+                    btnColor = Colors.red;
+                    txtColor = Colors.white;
+                  }
+                }
+
                 return ElevatedButton(
-                  onPressed: () => _handleAnswer(options[index]),
+                  onPressed: () => _handleAnswer(options[index], index),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: primaryColor,
+                    backgroundColor: btnColor,
+                    foregroundColor: txtColor,
                     elevation: 2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
-                      side: BorderSide(color: primaryColor, width: 2),
+                      side: BorderSide(
+                          color: selectedButtonIndex == index
+                              ? Colors.transparent
+                              : primaryColor,
+                          width: 2),
                     ),
                   ),
                   child: Text(
@@ -350,29 +465,19 @@ class _SignSprintGameState extends State<SignSprintGame> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Mascot
-            Image.asset('assets/images/groupbear.png', height: 160),
-
+            Image.asset('assets/images/games/game_over.png', height: 180),
             const SizedBox(height: 30),
-
-            const Text(
-              "GAME OVER",
-              style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.redAccent,
-                  letterSpacing: 1.5),
-            ),
-
+            const Text("GAME OVER",
+                style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.redAccent,
+                    letterSpacing: 1.5)),
             const SizedBox(height: 10),
-
-            Text(
-              "Final Score: $score",
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
-            ),
-
+            Text("Final Score: $score",
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.w500)),
             const SizedBox(height: 40),
-
             if (isHighLoading)
               const CircularProgressIndicator()
             else
@@ -401,7 +506,10 @@ class _SignSprintGameState extends State<SignSprintGame> {
                           score = 0;
                           lives = 3;
                           timerSeconds = 10;
+                          streak = 0; // Reset streak
                           isGameOver = false;
+                          bearState = 'running';
+                          screenFlashColor = Colors.transparent;
                           _generateNewQuestion();
                         });
                       },

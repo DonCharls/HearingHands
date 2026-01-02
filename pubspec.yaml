@@ -80,6 +80,7 @@ flutter:
     - assets/images/locked.png
     - assets/images/dictionary/
     - assets/images/avatar/
+    - assets/images/games/
 
   fonts:
     - family: Whisper
