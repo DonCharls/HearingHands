@@ -26,14 +26,21 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1 
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/hhlogo.png" 
+  min_sdk_android: 21 
+  adaptive_icon_background: "#ffffff" 
+  adaptive_icon_foreground: "assets/images/hhlogo.png" 
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/hhlogo.png
     - assets/images/logo.png
-    - assets/images/group.jpg
-    - assets/images/talk.png
     - assets/images/bear.png
     - assets/images/welcome.png
     - assets/images/google.png
@@ -53,7 +60,6 @@ flutter:
     - assets/images/stulesson.png
     - assets/images/vwxlesson.png
     - assets/images/yzlesson.png
-    - assets/images/profile.jpg
     - assets/images/fire.png
     - assets/images/calendar.png
     - assets/images/groupbear.png
@@ -78,6 +84,8 @@ flutter:
     - assets/images/celebration.png
     - assets/images/celebrationn.png
     - assets/images/locked.png
+    - assets/images/gamerbear.png
+    - assets/images/readingbear.png
     - assets/images/dictionary/
     - assets/images/avatar/
     - assets/images/games/
