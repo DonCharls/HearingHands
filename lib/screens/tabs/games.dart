@@ -38,24 +38,31 @@ class Games extends StatelessWidget {
           FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
       builder: (context, snapshot) {
         int sprintScore = 0;
+        int memoryMoves = 0; // NEW: Variable for Memory Match score
+
         if (snapshot.hasData && snapshot.data!.exists) {
           final data = snapshot.data!.data() as Map<String, dynamic>?;
           sprintScore = data?['gameHighScore'] ?? 0;
+          // NEW: Fetch 'memoryLowScore' from Firebase
+          memoryMoves = data?['memoryLowScore'] ?? 0;
         }
-        // Pass the score and "false" for isGuest
-        return _buildMainLayout(context, sprintScore, isGuest: false);
+
+        // Pass both scores to the layout
+        return _buildMainLayout(context, sprintScore, memoryMoves,
+            isGuest: false);
       },
     );
   }
 
   // --- LAYOUT FOR GUESTS ---
   Widget _buildGuestContent(BuildContext context) {
-    // Pass 0 score and "true" for isGuest
-    return _buildMainLayout(context, 0, isGuest: true);
+    // Pass 0 for scores and "true" for isGuest
+    return _buildMainLayout(context, 0, 0, isGuest: true);
   }
 
   // --- SHARED MAIN LAYOUT ---
-  Widget _buildMainLayout(BuildContext context, int sprintScore,
+  Widget _buildMainLayout(
+      BuildContext context, int sprintScore, int memoryMoves,
       {required bool isGuest}) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
@@ -101,7 +108,7 @@ class Games extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // 2. MEMORY MATCH
+          // 2. MEMORY MATCH (UPDATED)
           _buildGameCard(
             context,
             title: "Memory Match",
@@ -109,8 +116,14 @@ class Games extends StatelessWidget {
             description: "Train your visual memory.",
             tag: "🧠 Brain",
             imagePath: "assets/images/games/memorymatch_logo.png",
-            score: "Play Now",
-            primaryColor: Colors.teal,
+            // UPDATED LOGIC:
+            // 1. Guest? -> "Guest Mode"
+            // 2. No score (0)? -> "Play Now"
+            // 3. Has score? -> "X Moves"
+            score: isGuest
+                ? "Guest Mode"
+                : (memoryMoves == 0 ? "Play Now" : "$memoryMoves Moves"),
+            primaryColor: primaryColor,
             isLocked: false,
             onTap: () {
               Navigator.push(
@@ -124,7 +137,6 @@ class Games extends StatelessWidget {
           const SizedBox(height: 35),
 
           // --- SECTION 2: COMING SOON ---
-          // FIXED: Added 'const' to the Row to fix the error
           const Row(
             children: [
               Icon(Icons.rocket_launch_rounded, size: 20, color: Colors.orange),
@@ -163,7 +175,7 @@ class Games extends StatelessWidget {
             subtitle: "Build the conversation.",
             description: "Practice grammar & syntax.",
             tag: "💬 Chat",
-            imagePath: "assets/images/games/sentence_logo.png",
+            imagePath: "assets/images/games/signasentence_logo.png",
             score: "Coming Soon",
             primaryColor: Colors.blueAccent,
             isLocked: true,
@@ -179,7 +191,7 @@ class Games extends StatelessWidget {
             subtitle: "Catch the digits!",
             description: "Master counting 1-10.",
             tag: "🔢 Math",
-            imagePath: "assets/images/games/numbers_logo.png",
+            imagePath: "assets/images/games/numberpopper_logo.png",
             score: "Coming Soon",
             primaryColor: Colors.amber,
             isLocked: true,
@@ -195,7 +207,7 @@ class Games extends StatelessWidget {
             subtitle: "Match the emotion.",
             description: "Express needs & feelings.",
             tag: "😊 Emotions",
-            imagePath: "assets/images/games/mood_logo.png",
+            imagePath: "assets/images/games/moodmaster_logo.png",
             score: "Coming Soon",
             primaryColor: Colors.purpleAccent,
             isLocked: true,

@@ -21,7 +21,7 @@ class _SignSprintGameState extends State<SignSprintGame> {
   int score = 0;
   int lives = 3;
   int timerSeconds = 10;
-  int maxTime = 10; // New: Used for progress bar calculation
+  int maxTime = 10;
   Timer? _timer;
   bool isGameOver = false;
   bool isHighLoading = false;
@@ -30,7 +30,11 @@ class _SignSprintGameState extends State<SignSprintGame> {
   String bearState = 'running';
   Color screenFlashColor = Colors.transparent;
   bool showSpeedUpLabel = false;
-  int streak = 0; // New: Streak Counter
+  int streak = 0;
+
+  // --- NEW: COUNTDOWN STATE ---
+  bool isGameStarting = true; // Blocks game interactions
+  int startCountdown = 3; // The 3-2-1 countdown value
 
   late String currentLetter;
   late List<String> options;
@@ -41,16 +45,79 @@ class _SignSprintGameState extends State<SignSprintGame> {
   @override
   void initState() {
     super.initState();
-    _generateNewQuestion();
+    // Don't start game immediately. Start the 3-2-1 countdown.
+    _startOpeningCountdown();
+  }
+
+  // --- NEW FEATURE: 3-2-1 COUNTDOWN ---
+  void _startOpeningCountdown() {
+    setState(() {
+      isGameStarting = true;
+      bearState = 'running';
+    });
+
+    // Initialize dummy data so the screen isn't empty behind the countdown
+    currentLetter = "A";
+    options = ["A", "B", "C", "D"];
+
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        if (startCountdown > 1) {
+          startCountdown--;
+          HapticFeedback.selectionClick(); // Nice tick feel
+        } else {
+          timer.cancel();
+          isGameStarting = false;
+          _generateNewQuestion(); // START THE REAL GAME
+        }
+      });
+    });
+  }
+
+  // --- NEW FEATURE: PAUSE & EXIT DIALOG ---
+  Future<bool> _onWillPop() async {
+    // Pause the game timer while dialog is open
+    _timer?.cancel();
+
+    final shouldPop = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Quit Game?"),
+        content: const Text("Your progress will be lost."),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Resume game if they stay
+              Navigator.of(context).pop(false);
+              if (!isGameOver && !isGameStarting) _startTimer();
+            },
+            child: const Text("Keep Playing"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text("Quit", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    return shouldPop ?? false;
   }
 
   void _startTimer() {
     _timer?.cancel();
     // Calculate difficulty
-    int dynamicTime = (10 - (score ~/ 20)).clamp(3, 10);
+    int dynamicTime = (10 - (score ~/ 100)).clamp(3, 10);
 
     setState(() {
-      maxTime = dynamicTime; // Set max time for this round (for the ring)
+      maxTime = dynamicTime;
       timerSeconds = dynamicTime;
     });
 
@@ -97,7 +164,8 @@ class _SignSprintGameState extends State<SignSprintGame> {
   }
 
   void _handleAnswer(String selected, int index) {
-    if (isGameOver || selectedButtonIndex != null) return;
+    // Prevent clicking during countdown or game over
+    if (isGameOver || isGameStarting || selectedButtonIndex != null) return;
 
     setState(() {
       selectedButtonIndex = index;
@@ -107,13 +175,13 @@ class _SignSprintGameState extends State<SignSprintGame> {
       HapticFeedback.lightImpact();
       setState(() {
         score += 10;
-        streak++; // Increment streak
+        streak++;
         bearState = 'correct';
         wasSelectionCorrect = true;
         screenFlashColor = Colors.green.withValues(alpha: 0.1);
       });
 
-      if (score > 0 && score % 150 == 0) _triggerSpeedUpAlert();
+      if (score > 0 && score % 100 == 0) _triggerSpeedUpAlert();
 
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted && !isGameOver) {
@@ -132,7 +200,7 @@ class _SignSprintGameState extends State<SignSprintGame> {
 
     setState(() {
       lives--;
-      streak = 0; // Reset streak
+      streak = 0;
       bearState = 'wrong';
       if (!isTimeout) wasSelectionCorrect = false;
       screenFlashColor = Colors.red.withValues(alpha: 0.15);
@@ -186,68 +254,129 @@ class _SignSprintGameState extends State<SignSprintGame> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Sign Sprint",
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-      ),
-      body: Stack(
-        children: [
-          isGameOver ? _buildGameOverScreen() : _buildGameplayScreen(),
+    // UPDATED: Using PopScope instead of WillPopScope
+    return PopScope(
+      canPop: false, // 1. Block the automatic back navigation
+      onPopInvoked: (didPop) async {
+        if (didPop) return; // If already popped, do nothing
 
-          IgnorePointer(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              color: screenFlashColor,
-            ),
+        // 2. Show our dialog manually
+        final shouldQuit = await _onWillPop();
+
+        // 3. If user said "Yes" (true), manually close the screen
+        if (shouldQuit && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text("Sign Sprint",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          centerTitle: true,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            onPressed: () async {
+              // Trigger the same exit logic as physical back button
+              final shouldQuit = await _onWillPop();
+              if (shouldQuit && context.mounted) {
+                Navigator.of(context).pop();
+              }
+            },
           ),
+        ),
+        body: Stack(
+          children: [
+            isGameOver ? _buildGameOverScreen() : _buildGameplayScreen(),
 
-          // Floating "Speed Up" Alert
-          Positioned(
-            top: 100,
-            left: 0,
-            right: 0,
-            child: IgnorePointer(
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 300),
-                opacity: showSpeedUpLabel ? 1.0 : 0.0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                        color: Colors.orange,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4))
-                        ]),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.flash_on, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text("SPEED UP!",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16)),
-                      ],
+            IgnorePointer(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                color: screenFlashColor,
+              ),
+            ),
+
+            // Speed Up Alert
+            Positioned(
+              top: 100,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  opacity: showSpeedUpLabel ? 1.0 : 0.0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4))
+                          ]),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.flash_on, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text("SPEED UP!",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16)),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+
+            // --- COUNTDOWN OVERLAY ---
+            if (isGameStarting)
+              Container(
+                color: Colors.black.withValues(alpha: 0.7),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "GET READY",
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2),
+                      ),
+                      const SizedBox(height: 20),
+                      // Animated Countdown Text
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 400),
+                        transitionBuilder: (child, anim) => ScaleTransition(
+                            scale: anim,
+                            child: FadeTransition(opacity: anim, child: child)),
+                        child: Text(
+                          "$startCountdown",
+                          key: ValueKey<int>(startCountdown),
+                          style: TextStyle(
+                              fontSize: 100,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -285,7 +414,7 @@ class _SignSprintGameState extends State<SignSprintGame> {
                   ],
                 ),
 
-                // --- 10/10 UPGRADE: VISUAL TIMER RING ---
+                // Timer Ring
                 Stack(
                   alignment: Alignment.center,
                   children: [
@@ -293,10 +422,9 @@ class _SignSprintGameState extends State<SignSprintGame> {
                       width: 45,
                       height: 45,
                       child: CircularProgressIndicator(
-                        value: timerSeconds / maxTime, // Animates the ring
+                        value: timerSeconds / maxTime,
                         strokeWidth: 4,
                         backgroundColor: Colors.grey.shade300,
-                        // Color changes based on time left
                         valueColor: AlwaysStoppedAnimation<Color>(
                             timerSeconds <= 3 ? Colors.red : primaryColor),
                       ),
@@ -320,20 +448,17 @@ class _SignSprintGameState extends State<SignSprintGame> {
 
           const Spacer(),
 
-          // --- 10/10 UPGRADE: ANIMATED QUESTION ---
+          // --- QUESTION CARD ---
           Column(
             children: [
               const Text("Match the Sign!",
                   style: TextStyle(color: Colors.grey, fontSize: 16)),
               const SizedBox(height: 10),
-
-              // AnimatedSwitcher makes it fade/scale when 'currentLetter' changes
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
                 transitionBuilder: (Widget child, Animation<double> animation) {
                   return ScaleTransition(scale: animation, child: child);
                 },
-                // We use a Key so Flutter knows the widget changed
                 child: Container(
                   key: ValueKey<String>(currentLetter),
                   height: 220,
@@ -430,7 +555,10 @@ class _SignSprintGameState extends State<SignSprintGame> {
                 }
 
                 return ElevatedButton(
-                  onPressed: () => _handleAnswer(options[index], index),
+                  // 3. DISABLE BUTTONS DURING COUNTDOWN
+                  onPressed: isGameStarting
+                      ? null
+                      : () => _handleAnswer(options[index], index),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: btnColor,
                     foregroundColor: txtColor,
@@ -506,11 +634,13 @@ class _SignSprintGameState extends State<SignSprintGame> {
                           score = 0;
                           lives = 3;
                           timerSeconds = 10;
-                          streak = 0; // Reset streak
+                          streak = 0;
                           isGameOver = false;
                           bearState = 'running';
                           screenFlashColor = Colors.transparent;
-                          _generateNewQuestion();
+                          startCountdown = 3; // Reset countdown
+                          // Restart with countdown
+                          _startOpeningCountdown();
                         });
                       },
                       style: ElevatedButton.styleFrom(

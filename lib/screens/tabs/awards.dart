@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../create_account.dart';
 import '../sign_in.dart';
-// IMPORT THE BADGE DATA
 import '../../models/badge_data.dart';
 
 class Awards extends StatefulWidget {
@@ -16,6 +15,10 @@ class Awards extends StatefulWidget {
 class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
+
+  // --- STATE: LEADERBOARD FILTER ---
+  // FIXED: Changed 'memoryLowestMoves' to 'memoryLowScore' to match the Game file
+  String sortBy = 'signsLearned';
 
   @override
   void initState() {
@@ -31,18 +34,13 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    // --- GUEST CHECK ---
-    if (currentUserId.isEmpty) {
-      return _buildGuestView();
-    }
+    if (currentUserId.isEmpty) return _buildGuestView();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text(
-          "Achievements Hub",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Achievements Hub",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF58C56E),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -70,7 +68,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- GUEST VIEW ---
+  // --- GUEST VIEW (Unchanged) ---
   Widget _buildGuestView() {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -83,38 +81,31 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
               Image.asset('assets/images/locked.png',
                   width: 180, height: 180, fit: BoxFit.contain),
               const SizedBox(height: 30),
-              const Text(
-                "Awards Locked",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF58C56E)),
-              ),
+              const Text("Awards Locked",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF58C56E))),
               const SizedBox(height: 15),
               const Text(
-                "Sign in to track your badges, compete on the leaderboard, and save your game high scores.",
-                textAlign: TextAlign.center,
-                style:
-                    TextStyle(fontSize: 15, color: Colors.black54, height: 1.5),
-              ),
+                  "Sign in to track your badges, compete on the leaderboard, and save your game high scores.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 15, color: Colors.black54, height: 1.5)),
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const CreateAccountScreen()));
-                  },
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const CreateAccountScreen())),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF58C56E),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                  ),
+                      backgroundColor: const Color(0xFF58C56E),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12))),
                   child: const Text("Create an Account",
                       style: TextStyle(
                           color: Colors.white,
@@ -126,18 +117,16 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const SignInScreen()));
-                  },
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SignInScreen())),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF58C56E), width: 2),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
+                      side:
+                          const BorderSide(color: Color(0xFF58C56E), width: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12))),
                   child: const Text("Sign In",
                       style: TextStyle(
                           color: Color(0xFF58C56E),
@@ -152,7 +141,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- TAB 1: BADGES ---
+  // --- TAB 1: BADGES (Unchanged) ---
   Widget _buildBadgesTab() {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
@@ -160,13 +149,11 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
           .doc(currentUserId)
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (!snapshot.hasData)
           return const Center(child: CircularProgressIndicator());
-        }
 
         Map<String, dynamic> userData =
             snapshot.data!.data() as Map<String, dynamic>? ?? {};
-
         int unlockedCount = 0;
         for (var rule in allBadges) {
           if (rule['check'](userData)) unlockedCount++;
@@ -178,18 +165,23 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              color: Colors.white,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5))
+                ],
+              ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "$unlockedCount / ${allBadges.length} Unlocked",
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
+                      Text("$unlockedCount / ${allBadges.length} Unlocked",
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
                       Text("${(progress * 100).toInt()}%",
                           style: const TextStyle(
                               color: Colors.grey, fontWeight: FontWeight.bold)),
@@ -199,29 +191,26 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 10,
-                      backgroundColor: Colors.grey.shade200,
-                      color: const Color(0xFF58C56E),
-                    ),
+                        value: progress,
+                        minHeight: 12,
+                        backgroundColor: Colors.grey.shade200,
+                        color: const Color(0xFF58C56E)),
                   ),
                 ],
               ),
             ),
             Expanded(
               child: GridView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 0.8,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                ),
+                    crossAxisCount: 3,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15),
                 itemCount: allBadges.length,
                 itemBuilder: (context, index) {
                   final badge = allBadges[index];
                   final bool isUnlocked = badge['check'](userData);
-
                   return GestureDetector(
                     onTap: () => _showBadgeDetails(context, badge, isUnlocked),
                     child: Container(
@@ -232,7 +221,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                           BoxShadow(
                               color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 6,
-                              offset: const Offset(0, 2))
+                              offset: const Offset(0, 3))
                         ],
                       ),
                       child: Column(
@@ -241,34 +230,31 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                           Opacity(
                             opacity: isUnlocked ? 1.0 : 0.3,
                             child: Image.asset(badge['image'],
-                                height: 50,
+                                height: 60,
                                 errorBuilder: (_, __, ___) => const Icon(
                                     Icons.emoji_events,
                                     size: 40,
                                     color: Colors.grey)),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Text(
-                              badge['title'],
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: isUnlocked
-                                      ? Colors.black87
-                                      : Colors.grey),
-                            ),
+                            child: Text(badge['title'],
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isUnlocked
+                                        ? Colors.black87
+                                        : Colors.grey)),
                           ),
                           if (!isUnlocked)
                             const Padding(
-                              padding: EdgeInsets.only(top: 4),
-                              child: Icon(Icons.lock,
-                                  size: 12, color: Colors.grey),
-                            )
+                                padding: EdgeInsets.only(top: 4),
+                                child: Icon(Icons.lock,
+                                    size: 12, color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -282,147 +268,286 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- TAB 2: LEADERBOARD (Improved UX + Bug Fix) ---
+  // --- TAB 2: LEADERBOARD ---
   Widget _buildLeaderboardTab() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .orderBy('signsLearned', descending: true)
-          .limit(20)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const Center(
-              child: Text("Something went wrong loading scores."));
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    // Logic: If filtering by Memory Moves, Lower is Better (Ascending).
+    bool isMemoryMatch = sortBy == 'memoryLowScore';
 
-        final users = snapshot.data!.docs;
+    // QUERY BUILDER
+    Query query = FirebaseFirestore.instance.collection('users').limit(20);
 
-        // UX IMPROVEMENT: Delightful Zero State
-        if (users.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/images/groupbear.png', height: 120),
-                const SizedBox(height: 20),
-                const Text("No learners yet. Be the first!",
-                    style: TextStyle(color: Colors.grey)),
-              ],
-            ),
-          );
-        }
+    // CRITICAL FIX:
+    // If we are sorting by Memory Scores (Ascending), we MUST exclude 0.
+    // Otherwise, users who haven't played (score 0) will be #1.
+    if (isMemoryMatch) {
+      query = query
+          .where('memoryLowScore', isGreaterThan: 0)
+          .orderBy('memoryLowScore', descending: false);
+    } else {
+      // Normal High Score logic
+      query = query.orderBy(sortBy, descending: true);
+    }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: users.length,
-          itemBuilder: (context, index) {
-            final userDoc = users[index].data() as Map<String, dynamic>;
-            final String name = userDoc['fullName'] ?? 'Learner';
-            final int signs = userDoc['signsLearned'] ?? 0;
-            final int gameScore = userDoc['gameHighScore'] ?? 0;
-            final bool isMe = users[index].id == currentUserId;
+    return Column(
+      children: [
+        // 1. Filter Buttons
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.grey.shade300)),
+          child: Row(
+            children: [
+              _buildFilterBtn("Learner", 'signsLearned'),
+              _buildFilterBtn("Sprinter", 'gameHighScore'),
+              // FIXED: Changed value key to 'memoryLowScore'
+              _buildFilterBtn("Memory", 'memoryLowScore'),
+            ],
+          ),
+        ),
 
-            // UX IMPROVEMENT: Top 3 Visual Hierarchy
-            Color? borderColor;
-            if (index == 0)
-              borderColor = const Color(0xFFFFD700); // Gold
-            else if (index == 1)
-              borderColor = const Color(0xFFC0C0C0); // Silver
-            else if (index == 2)
-              borderColor = const Color(0xFFCD7F32); // Bronze
-            else if (isMe) borderColor = const Color(0xFF58C56E); // Me
+        // 2. The List
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: query.snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData)
+                return const Center(child: CircularProgressIndicator());
+              final users = snapshot.data!.docs;
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: isMe ? const Color(0xFFF0FDF4) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                // Custom border for Top 3 or User
-                border: borderColor != null
-                    ? Border.all(color: borderColor, width: isMe ? 2 : 1)
-                    : null,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.grey.withValues(alpha: 0.08),
-                      spreadRadius: 1,
-                      blurRadius: 4)
+              if (users.isEmpty) {
+                return Center(
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                      Image.asset('assets/images/groupbear.png', height: 120),
+                      const SizedBox(height: 20),
+                      const Text("No scores yet!",
+                          style: TextStyle(color: Colors.grey))
+                    ]));
+              }
+
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
+                children: [
+                  // 3. THE PODIUM (Top 3)
+                  if (users.isNotEmpty) _buildPodium(users),
+
+                  const SizedBox(height: 20),
+                  const Text("All Learners",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const SizedBox(height: 10),
+
+                  // 4. The Rest of the List (Start from index 3)
+                  if (users.length > 3)
+                    ...List.generate(users.length - 3, (index) {
+                      final actualIndex = index + 3; // Shift index
+                      return _buildLeaderboardCard(
+                          users[actualIndex], actualIndex);
+                    }),
+
+                  if (users.length <= 3)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 20),
+                      child: Center(
+                          child: Text("Join the race! Invite friends.",
+                              style: TextStyle(color: Colors.grey))),
+                    )
                 ],
-              ),
-              child: ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                leading: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Rank Icons
-                    SizedBox(
-                      width: 30,
-                      child: index == 0
-                          ? const Text("🥇", style: TextStyle(fontSize: 24))
-                          : index == 1
-                              ? const Text("🥈", style: TextStyle(fontSize: 24))
-                              : index == 2
-                                  ? const Text("🥉",
-                                      style: TextStyle(fontSize: 24))
-                                  : Text("#${index + 1}",
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey)),
-                    ),
-                    const SizedBox(width: 8),
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.grey.shade200,
-                      backgroundImage: (userDoc['profileImage'] != null)
-                          ? AssetImage(userDoc['profileImage'])
-                          : const AssetImage(
-                              'assets/images/avatar/avatar_1.png'),
-                    ),
-                  ],
-                ),
-                title: Text(name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontWeight: isMe ? FontWeight.bold : FontWeight.w500)),
-
-                // --- CRITICAL BUG FIX ---
-                // Used Flexible and TextOverflow to prevent pixel overflow
-                subtitle: Row(
-                  children: [
-                    Text("$signs Signs",
-                        style: const TextStyle(
-                            color: Color(0xFF58C56E),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13)),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        "• Score: $gameScore",
-                        style:
-                            const TextStyle(color: Colors.grey, fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ],
-                ),
-                trailing:
-                    isMe ? const Icon(Icons.star, color: Colors.orange) : null,
-              ),
-            );
-          },
-        );
-      },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  // --- POPUP DIALOG ---
+  // --- 10/10 HELPER: THE PODIUM ---
+  Widget _buildPodium(List<QueryDocumentSnapshot> users) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end, // Align bottom
+      children: [
+        // 2nd Place (Left)
+        if (users.length > 1)
+          Expanded(child: _buildPodiumSpot(users[1], 2, 90)),
+
+        // 1st Place (Center - Biggest)
+        Expanded(child: _buildPodiumSpot(users[0], 1, 110)),
+
+        // 3rd Place (Right)
+        if (users.length > 2)
+          Expanded(child: _buildPodiumSpot(users[2], 3, 90)),
+      ],
+    );
+  }
+
+  Widget _buildPodiumSpot(
+      QueryDocumentSnapshot user, int rank, double avatarSize) {
+    final data = user.data() as Map<String, dynamic>;
+    final name = data['fullName']?.split(" ")[0] ?? "User"; // First name only
+    final score = data[sortBy] ?? 0;
+    final isMe = user.id == currentUserId;
+
+    // Dynamic Suffix
+    String suffix = "";
+    if (sortBy == 'signsLearned') suffix = " Signs";
+    if (sortBy == 'gameHighScore') suffix = " Pts";
+    // FIXED: Correct check
+    if (sortBy == 'memoryLowScore') suffix = " Moves";
+
+    Color crownColor = rank == 1
+        ? const Color(0xFFFFD700)
+        : (rank == 2 ? const Color(0xFFC0C0C0) : const Color(0xFFCD7F32));
+
+    return Column(
+      children: [
+        if (rank == 1)
+          const Icon(Icons.emoji_events, color: Color(0xFFFFD700), size: 30),
+        const SizedBox(height: 5),
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: crownColor, width: 3)),
+          child: CircleAvatar(
+            radius: avatarSize / 2,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage: (data['profileImage'] != null)
+                ? AssetImage(data['profileImage'])
+                : const AssetImage('assets/images/avatar/avatar_1.png'),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(name,
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isMe ? const Color(0xFF58C56E) : Colors.black87),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
+        Container(
+          margin: const EdgeInsets.only(top: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+              color: crownColor, borderRadius: BorderRadius.circular(12)),
+          child: Text("$score$suffix",
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10)),
+        ),
+        // Visual "Step"
+        Container(
+          height: rank == 1 ? 30 : 15, // 1st place stands higher
+          width: 50,
+          margin: const EdgeInsets.only(top: 10),
+          decoration: BoxDecoration(
+            color: crownColor.withValues(alpha: 0.2),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+          ),
+          child: Center(
+              child: Text("$rank",
+                  style: TextStyle(
+                      color: crownColor, fontWeight: FontWeight.bold))),
+        )
+      ],
+    );
+  }
+
+  Widget _buildFilterBtn(String title, String value) {
+    bool isSelected = sortBy == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => sortBy = value),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF58C56E) : Colors.transparent,
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            // Adjust font size if screen is small
+            style: TextStyle(
+                fontSize: 12,
+                color: isSelected ? Colors.white : Colors.grey,
+                fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeaderboardCard(QueryDocumentSnapshot user, int index) {
+    final data = user.data() as Map<String, dynamic>;
+    final isMe = user.id == currentUserId;
+
+    // Dynamic Display
+    String displayScore = "";
+    if (sortBy == 'signsLearned')
+      displayScore = "${data[sortBy] ?? 0} Signs";
+    else if (sortBy == 'gameHighScore')
+      displayScore = "${data[sortBy] ?? 0} Pts";
+    else
+      displayScore = "${data[sortBy] ?? '--'} Moves";
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isMe ? const Color(0xFFF0FDF4) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: isMe ? Border.all(color: const Color(0xFF58C56E)) : null,
+        boxShadow: [
+          BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2))
+        ],
+      ),
+      child: ListTile(
+        leading: Container(
+          width: 40,
+          alignment: Alignment.center,
+          child: Text("#${index + 1}",
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                  fontSize: 16)),
+        ),
+        title: Row(
+          children: [
+            CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage: (data['profileImage'] != null)
+                    ? AssetImage(data['profileImage'])
+                    : const AssetImage('assets/images/avatar/avatar_1.png')),
+            const SizedBox(width: 12),
+            Expanded(
+                child: Text(data['fullName'] ?? "Learner",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600))),
+          ],
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+              color: const Color(0xFFF5F7FA),
+              borderRadius: BorderRadius.circular(12)),
+          child: Text(displayScore,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, color: Colors.black87)),
+        ),
+      ),
+    );
+  }
+
+  // --- POPUP DIALOG (Unchanged) ---
   void _showBadgeDetails(
       BuildContext context, Map<String, dynamic> badge, bool isUnlocked) {
     showModalBottomSheet(
@@ -451,26 +576,22 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
             const SizedBox(height: 30),
             if (isUnlocked)
               ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.check),
-                label: const Text("Awesome!"),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF58C56E),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20))),
-              )
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.check),
+                  label: const Text("Awesome!"),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF58C56E),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20))))
             else
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.lock, color: Colors.grey),
-                  SizedBox(width: 8),
-                  Text("Keep learning to unlock!",
-                      style: TextStyle(
-                          color: Colors.grey, fontWeight: FontWeight.bold)),
-                ],
-              )
+              const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(Icons.lock, color: Colors.grey),
+                SizedBox(width: 8),
+                Text("Keep learning to unlock!",
+                    style: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.bold))
+              ])
           ],
         ),
       ),

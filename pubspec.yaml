@@ -31,15 +31,15 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/hhlogo.png" 
+  image_path: "assets/images/hearinglogo.png" 
   min_sdk_android: 21 
   adaptive_icon_background: "#ffffff" 
-  adaptive_icon_foreground: "assets/images/hhlogo.png" 
+  adaptive_icon_foreground: "assets/images/hearinglogo.png" 
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/hhlogo.png
+    - assets/images/hearinglogo.png
     - assets/images/logo.png
     - assets/images/bear.png
     - assets/images/welcome.png
