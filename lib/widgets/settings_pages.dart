@@ -7,23 +7,25 @@ class AboutUsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA), // Light grey background
       appBar: AppBar(
         title: const Text("About Us",
             style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF58C56E),
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Logo
-            Image.asset('assets/images/hhlogo.png', height: 100),
-            const SizedBox(height: 20),
-
+            // Logo with soft edges
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset('assets/images/hearinglogo.jpg', height: 100),
+            ),
+            const SizedBox(height: 16),
             const Text(
               "HearingHands",
               style: TextStyle(
@@ -31,37 +33,51 @@ class AboutUsPage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF58C56E)),
             ),
-            const Text(
-              "Version 1.0.0",
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 30),
+            const Text("Version 1.0.0", style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 32),
 
-            const Text(
-              "Our Mission",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            // Mission & Vision Cards
+            _buildInfoCard(
+              context,
+              title: "Our Mission",
+              icon: Icons.rocket_launch,
+              content:
+                  "To bridge the communication gap between the hearing and the Deaf community by making FSL learning fun, accessible, and engaging through technology.",
             ),
-            const SizedBox(height: 10),
-            const Text(
-              "HearingHands is designed to bridge the gap between the hearing and the Deaf community. By gamifying the learning process, we make Sign Language accessible, fun, and engaging for everyone.",
-              textAlign: TextAlign.center,
-              style:
-                  TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+            const SizedBox(height: 16),
+            _buildInfoCard(
+              context,
+              title: "Our Vision",
+              icon: Icons.visibility,
+              content:
+                  "A future where every Filipino is empowered to communicate in Sign Language, fostering a truly inclusive and barrier-free society.",
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 32),
             const Divider(),
-            const SizedBox(height: 30),
+            const SizedBox(height: 32),
 
-            const Text(
-              "Meet the Team",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            const Text("Meet the Team",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
 
-            _buildTeamMember("Your Name", "Lead Developer"),
-            _buildTeamMember("Teammate 1", "UI/UX Designer"),
-            _buildTeamMember("Teammate 2", "Researcher"),
+            _buildTeamMember(
+              name: "Emelie C. Abendan",
+              primaryRole: "Project Manager / Technical Writer",
+              subRole: "Documentation & System Planning",
+            ),
+
+            _buildTeamMember(
+              name: "Don Charls M. Bibat",
+              primaryRole: "Lead Developer / UI/UX Designer",
+              subRole: "Full Stack Dev & Graphics",
+            ),
+
+            _buildTeamMember(
+              name: "Jaylord L. Benlot",
+              primaryRole: "Quality Assurance Specialist",
+              subRole: "System Testing & Bug Tracking",
+            ),
 
             const SizedBox(height: 40),
             const Text("© 2026 HearingHands Team",
@@ -72,21 +88,81 @@ class AboutUsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTeamMember(String name, String role) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+  // Modern Card Widget for Mission/Vision
+  Widget _buildInfoCard(BuildContext context,
+      {required String title,
+      required IconData icon,
+      required String content}) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
         children: [
-          const Icon(Icons.person, color: Color(0xFF58C56E), size: 20),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(role,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Icon(icon, color: const Color(0xFF58C56E), size: 20),
+              const SizedBox(width: 8),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
             ],
+          ),
+          const SizedBox(height: 12),
+          Text(content,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 15, height: 1.5, color: Colors.black87)),
+        ],
+      ),
+    );
+  }
+
+  // Clean Team Member Widget
+  Widget _buildTeamMember(
+      {required String name,
+      required String primaryRole,
+      required String subRole}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: const Color(0xFF58C56E).withOpacity(0.1),
+            child: const Icon(Icons.person, color: Color(0xFF58C56E)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(primaryRole,
+                    style: const TextStyle(
+                        color: Color(0xFF58C56E),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
+                Text(subRole,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              ],
+            ),
           ),
         ],
       ),
@@ -94,7 +170,7 @@ class AboutUsPage extends StatelessWidget {
   }
 }
 
-// --- 2. FAQ PAGE ---
+// --- 2. FAQ PAGE (UPDATED WITH CATEGORIES) ---
 class FAQPage extends StatelessWidget {
   const FAQPage({super.key});
 
@@ -108,41 +184,104 @@ class FAQPage extends StatelessWidget {
         backgroundColor: const Color(0xFF58C56E),
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
-        children: const [
-          FAQItem(
-            question: "Is this app free?",
+        children: [
+          // --- GETTING STARTED ---
+          _buildCategoryHeader("Getting Started"),
+          const FAQItem(
+            question: "What is HearingHands?",
             answer:
-                "Yes! HearingHands is completely free to use for all learners.",
+                "HearingHands is an interactive educational mobile app designed to teach Filipino Sign Language (FSL) through gamified lessons and challenges. Our goal is to make learning FSL accessible and fun for everyone.",
           ),
-          FAQItem(
-            question: "Do I need internet access?",
+          const FAQItem(
+            question: "How do I unlock new lessons?",
             answer:
-                "You need internet to save your progress, view the leaderboard, and sign in. However, some games may work offline.",
+                "Lessons unlock one by one. Once you finish a lesson and pass its mini-quiz, the next one will automatically become available.",
           ),
-          FAQItem(
-            question: "How do I reset my password?",
+
+          const SizedBox(height: 10),
+
+          // --- LEARNING TIPS ---
+          _buildCategoryHeader("Learning Tips"),
+          const FAQItem(
+            question: "Which hand should I use?",
             answer:
-                "Go to Profile > Reset Password. We will send a secure link to your email address.",
+                "You should use your 'dominant' hand (the hand you write with). If you are right-handed, use your right hand for main movements.",
           ),
-          FAQItem(
+          const FAQItem(
+            question: "Do facial expressions matter?",
+            answer:
+                "Yes! In FSL, facial expressions are part of the grammar. They help convey the emotion and intensity of the sign.",
+          ),
+
+          const SizedBox(height: 10),
+
+          // --- GAMES & SCORING ---
+          _buildCategoryHeader("Games & Scoring"),
+          const FAQItem(
             question: "How are points calculated?",
             answer:
-                "You earn points by completing lessons and playing games like Sign Sprint. Faster times equal higher scores!",
+                "You earn points by completing lessons and playing Sign Sprint. In Memory Match, we track your 'Moves'—lower is better!",
           ),
-          FAQItem(
+          const FAQItem(
+            question: "Do I need internet access?",
+            answer:
+                "You need internet to sync your progress, view the leaderboard, and watch lesson videos. However, cached games may work offline.",
+          ),
+
+          const SizedBox(height: 10),
+
+          // --- ACCOUNT SETTINGS ---
+          _buildCategoryHeader("Account Settings"),
+          const FAQItem(
+            question: "How do I reset my password?",
+            answer:
+                "Go to Profile > Settings. You can request a secure password reset link to be sent to your email.",
+          ),
+          const FAQItem(
             question: "Can I delete my account?",
             answer:
                 "Yes. We respect your privacy. Go to Profile > Delete Account to permanently remove your data.",
           ),
+
+          const SizedBox(height: 30),
+
+          // --- SUPPORT FOOTER ---
+          const Column(
+            children: [
+              Text("Still need help?",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              SizedBox(height: 5),
+              Text("Contact us at support@hearinghands.ph",
+                  style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+          const SizedBox(height: 20),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10, top: 5, left: 5),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          color: Color(0xFF58C56E),
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.1,
+          fontSize: 12,
+        ),
       ),
     );
   }
 }
 
+// --- 3. FAQ ITEM WIDGET ---
 class FAQItem extends StatelessWidget {
   final String question;
   final String answer;
@@ -152,7 +291,7 @@ class FAQItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 15),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -163,18 +302,23 @@ class FAQItem extends StatelessWidget {
               offset: const Offset(0, 2))
         ],
       ),
-      child: ExpansionTile(
-        title: Text(question,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        textColor: const Color(0xFF58C56E),
-        iconColor: const Color(0xFF58C56E),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Text(answer,
-                style: const TextStyle(height: 1.5, color: Colors.black87)),
-          ),
-        ],
+      child: Theme(
+        // Removes the default divider line when expanded
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          title: Text(question,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          textColor: const Color(0xFF58C56E),
+          iconColor: const Color(0xFF58C56E),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(answer,
+                  style: const TextStyle(height: 1.5, color: Colors.black87)),
+            ),
+          ],
+        ),
       ),
     );
   }

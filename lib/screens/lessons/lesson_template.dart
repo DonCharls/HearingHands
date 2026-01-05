@@ -4,7 +4,7 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart' as yt;
 import 'package:confetti/confetti.dart';
 import '../../models/lesson_content.dart';
 
-// Assumed Widget Imports (Update paths if yours are different)
+// Assumed Widget Imports
 import '../../widgets/lesson_button.dart';
 import '../../widgets/lesson_close.dart';
 import '../../widgets/lesson_back.dart';
@@ -14,14 +14,14 @@ class LessonTemplate extends StatefulWidget {
   final String lessonTitle;
   final String heroImage;
   final List<LessonContent> contents;
-  final VoidCallback? onComplete; // <--- 1. THIS WAS MISSING
+  final VoidCallback? onComplete;
 
   const LessonTemplate({
     super.key,
     required this.lessonTitle,
     required this.heroImage,
     required this.contents,
-    this.onComplete, // <--- 2. THIS WAS MISSING
+    this.onComplete,
   });
 
   @override
@@ -39,7 +39,9 @@ class _LessonTemplateState extends State<LessonTemplate> {
   // --- QUIZ STATE ---
   String? _selectedQuizAnswer;
   bool? _isQuizCorrect;
-  late LessonContent _quizQuestion;
+
+  // CHANGED: Now a list of questions instead of a single one
+  List<LessonContent> _quizQuestions = [];
   late List<String> _quizOptions;
 
   @override
@@ -50,13 +52,17 @@ class _LessonTemplateState extends State<LessonTemplate> {
     _generateQuiz();
   }
 
-  // --- DYNAMIC QUIZ GENERATOR ---
+  // --- DYNAMIC QUIZ GENERATOR (UPDATED) ---
   void _generateQuiz() {
-    final random = Random();
-    // 1. Pick a random letter from the lesson to be the question
     if (widget.contents.isNotEmpty) {
-      _quizQuestion = widget.contents[random.nextInt(widget.contents.length)];
-      // 2. Get the titles (A, B, C) for the buttons
+      // 1. Create a copy of contents and shuffle them to randomize order
+      final shuffled = List<LessonContent>.from(widget.contents)..shuffle();
+
+      // 2. Take up to 3 items (or fewer if the lesson has less than 3)
+      final count = min(3, shuffled.length);
+      _quizQuestions = shuffled.sublist(0, count);
+
+      // 3. Get all titles as options (e.g., A, B, C, D...)
       _quizOptions = widget.contents.map((e) => e.title).toList();
     }
   }
@@ -67,14 +73,22 @@ class _LessonTemplateState extends State<LessonTemplate> {
     super.dispose();
   }
 
-  int get totalSlides => 4 + widget.contents.length;
+  // Calculate total slides: Intro + (Learning Slides) + Practice + (Quiz Questions) + Completion
+  int get totalSlides => 2 + widget.contents.length + _quizQuestions.length + 1;
+
   double get _progress => (_currentIndex / (totalSlides - 1)).clamp(0.0, 1.0);
 
   void _nextPage() {
     if (_currentIndex < totalSlides - 1) {
       _controller.nextPage(
           duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-      setState(() => _currentIndex++);
+
+      setState(() {
+        _currentIndex++;
+        // RESET QUIZ STATE FOR THE NEXT SLIDE
+        _selectedQuizAnswer = null;
+        _isQuizCorrect = null;
+      });
 
       if (_currentIndex == totalSlides - 1) {
         _confettiController.play();
@@ -86,18 +100,25 @@ class _LessonTemplateState extends State<LessonTemplate> {
     if (_currentIndex > 0) {
       _controller.previousPage(
           duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-      setState(() => _currentIndex--);
+
+      setState(() {
+        _currentIndex--;
+        // Reset quiz state when going back too, just in case
+        _selectedQuizAnswer = null;
+        _isQuizCorrect = null;
+      });
     }
   }
 
   void _exitLesson() => Navigator.pop(context);
 
-  void _checkAnswer(String answer) async {
+  // CHANGED: Now accepts the 'correctAnswer' for the specific slide being viewed
+  void _checkAnswer(String selectedAnswer, String correctAnswer) async {
     setState(() {
-      _selectedQuizAnswer = answer;
+      _selectedQuizAnswer = selectedAnswer;
     });
 
-    if (answer == _quizQuestion.title) {
+    if (selectedAnswer == correctAnswer) {
       setState(() => _isQuizCorrect = true);
       await Future.delayed(const Duration(seconds: 1));
       _nextPage();
@@ -113,9 +134,9 @@ class _LessonTemplateState extends State<LessonTemplate> {
 
   @override
   Widget build(BuildContext context) {
-    // Safety check for empty content
-    if (widget.contents.isEmpty)
+    if (widget.contents.isEmpty) {
       return const Scaffold(body: Center(child: Text("No content")));
+    }
 
     final topPadding = MediaQuery.of(context).size.height * 0.06;
 
@@ -171,11 +192,21 @@ class _LessonTemplateState extends State<LessonTemplate> {
 
   List<Widget> _buildSlides() {
     List<Widget> slides = [_buildIntroSlide()];
-    // DYNAMICALLY CREATE SLIDES FROM DATA
+
+    // 1. Learning Slides
     slides.addAll(widget.contents.map((data) => _buildLetterSlide(data)));
+
+    // 2. Practice Slide
     slides.add(_buildPracticeSlide());
-    slides.add(_buildQuizSlide());
+
+    // 3. Quiz Slides (One for each generated question)
+    for (int i = 0; i < _quizQuestions.length; i++) {
+      slides.add(_buildQuizSlide(_quizQuestions[i], i));
+    }
+
+    // 4. Completion Slide
     slides.add(_buildCompletionSlide());
+
     return slides;
   }
 
@@ -321,19 +352,20 @@ class _LessonTemplateState extends State<LessonTemplate> {
           ),
           const SizedBox(height: 40),
           LessonButton(
-              label: "Quiz Time!", onPressed: _nextPage, color: primaryGreen),
+              label: "Start Quiz", onPressed: _nextPage, color: primaryGreen),
         ],
       ),
     );
   }
 
-  Widget _buildQuizSlide() {
+  // CHANGED: Now takes specific question data and index
+  Widget _buildQuizSlide(LessonContent questionData, int index) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 120, 24, 24),
       child: Column(
         children: [
-          const Text("Quiz Time",
-              style: TextStyle(
+          Text("Quiz Time (${index + 1}/${_quizQuestions.length})",
+              style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey)),
@@ -356,7 +388,7 @@ class _LessonTemplateState extends State<LessonTemplate> {
                     offset: const Offset(0, 4))
               ],
             ),
-            child: Image.asset(_quizQuestion.imagePath, fit: BoxFit.contain),
+            child: Image.asset(questionData.imagePath, fit: BoxFit.contain),
           ),
           const SizedBox(height: 30),
           Row(
@@ -393,7 +425,8 @@ class _LessonTemplateState extends State<LessonTemplate> {
             spacing: 20,
             children: _quizOptions.map((option) {
               return GestureDetector(
-                onTap: () => _checkAnswer(option),
+                // CHANGED: Pass the current question's correct answer
+                onTap: () => _checkAnswer(option, questionData.title),
                 child: Container(
                   width: 80,
                   height: 80,
@@ -448,12 +481,10 @@ class _LessonTemplateState extends State<LessonTemplate> {
         LessonButton(
             label: "Finish",
             onPressed: () {
-              // --- 3. EXECUTE THE LOGIC PASSED FROM ABC_LESSON ---
               if (widget.onComplete != null) {
                 widget.onComplete!();
-              } else {
-                Navigator.pop(context); // Fallback
               }
+              Navigator.pop(context);
             },
             color: primaryGreen),
       ]),

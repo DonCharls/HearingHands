@@ -17,7 +17,6 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
   final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
 
   // --- STATE: LEADERBOARD FILTER ---
-  // FIXED: Changed 'memoryLowestMoves' to 'memoryLowScore' to match the Game file
   String sortBy = 'signsLearned';
 
   @override
@@ -68,7 +67,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- GUEST VIEW (Unchanged) ---
+  // --- GUEST VIEW ---
   Widget _buildGuestView() {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -141,7 +140,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- TAB 1: BADGES (Unchanged) ---
+  // --- TAB 1: BADGES ---
   Widget _buildBadgesTab() {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
@@ -270,21 +269,16 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
 
   // --- TAB 2: LEADERBOARD ---
   Widget _buildLeaderboardTab() {
-    // Logic: If filtering by Memory Moves, Lower is Better (Ascending).
     bool isMemoryMatch = sortBy == 'memoryLowScore';
 
-    // QUERY BUILDER
-    Query query = FirebaseFirestore.instance.collection('users').limit(20);
+    // Query Limit set to 30
+    Query query = FirebaseFirestore.instance.collection('users').limit(30);
 
-    // CRITICAL FIX:
-    // If we are sorting by Memory Scores (Ascending), we MUST exclude 0.
-    // Otherwise, users who haven't played (score 0) will be #1.
     if (isMemoryMatch) {
       query = query
           .where('memoryLowScore', isGreaterThan: 0)
           .orderBy('memoryLowScore', descending: false);
     } else {
-      // Normal High Score logic
       query = query.orderBy(sortBy, descending: true);
     }
 
@@ -302,7 +296,6 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
             children: [
               _buildFilterBtn("Learner", 'signsLearned'),
               _buildFilterBtn("Sprinter", 'gameHighScore'),
-              // FIXED: Changed value key to 'memoryLowScore'
               _buildFilterBtn("Memory", 'memoryLowScore'),
             ],
           ),
@@ -365,20 +358,15 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- 10/10 HELPER: THE PODIUM ---
+  // --- PODIUM ---
   Widget _buildPodium(List<QueryDocumentSnapshot> users) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.end, // Align bottom
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // 2nd Place (Left)
         if (users.length > 1)
           Expanded(child: _buildPodiumSpot(users[1], 2, 90)),
-
-        // 1st Place (Center - Biggest)
         Expanded(child: _buildPodiumSpot(users[0], 1, 110)),
-
-        // 3rd Place (Right)
         if (users.length > 2)
           Expanded(child: _buildPodiumSpot(users[2], 3, 90)),
       ],
@@ -388,15 +376,13 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
   Widget _buildPodiumSpot(
       QueryDocumentSnapshot user, int rank, double avatarSize) {
     final data = user.data() as Map<String, dynamic>;
-    final name = data['fullName']?.split(" ")[0] ?? "User"; // First name only
+    final name = data['fullName']?.split(" ")[0] ?? "User";
     final score = data[sortBy] ?? 0;
     final isMe = user.id == currentUserId;
 
-    // Dynamic Suffix
     String suffix = "";
     if (sortBy == 'signsLearned') suffix = " Signs";
     if (sortBy == 'gameHighScore') suffix = " Pts";
-    // FIXED: Correct check
     if (sortBy == 'memoryLowScore') suffix = " Moves";
 
     Color crownColor = rank == 1
@@ -439,9 +425,8 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                   fontWeight: FontWeight.bold,
                   fontSize: 10)),
         ),
-        // Visual "Step"
         Container(
-          height: rank == 1 ? 30 : 15, // 1st place stands higher
+          height: rank == 1 ? 30 : 15,
           width: 50,
           margin: const EdgeInsets.only(top: 10),
           decoration: BoxDecoration(
@@ -471,7 +456,6 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
           child: Text(
             title,
             textAlign: TextAlign.center,
-            // Adjust font size if screen is small
             style: TextStyle(
                 fontSize: 12,
                 color: isSelected ? Colors.white : Colors.grey,
@@ -486,13 +470,14 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     final data = user.data() as Map<String, dynamic>;
     final isMe = user.id == currentUserId;
 
-    // Dynamic Display
     String displayScore = "";
-    if (sortBy == 'signsLearned')
+    if (sortBy == 'signsLearned') {
       displayScore = "${data[sortBy] ?? 0} Signs";
-    else if (sortBy == 'gameHighScore')
+    } else if (sortBy == 'gameHighScore')
+      // ignore: curly_braces_in_flow_control_structures
       displayScore = "${data[sortBy] ?? 0} Pts";
     else
+      // ignore: curly_braces_in_flow_control_structures
       displayScore = "${data[sortBy] ?? '--'} Moves";
 
     return Container(
@@ -547,7 +532,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
     );
   }
 
-  // --- POPUP DIALOG (Unchanged) ---
+  // --- POPUP DIALOG (FIXED) ---
   void _showBadgeDetails(
       BuildContext context, Map<String, dynamic> badge, bool isUnlocked) {
     showModalBottomSheet(
@@ -555,9 +540,10 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
       builder: (context) => Container(
+        width: double.infinity, // <--- FIXED: Forces full width consistency
         padding: const EdgeInsets.all(30),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min, // Wraps content vertically
           children: [
             Image.asset(badge['image'],
                 height: 100,
@@ -585,6 +571,7 @@ class _AwardsState extends State<Awards> with SingleTickerProviderStateMixin {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20))))
             else
+              // Removed 'const' to ensure consistent rebuilds with container width
               const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Icon(Icons.lock, color: Colors.grey),
                 SizedBox(width: 8),

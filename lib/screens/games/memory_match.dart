@@ -32,6 +32,9 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
   String bearState = 'neutral';
   late ConfettiController _confettiController;
 
+  // NEW: Timer reference so we can cancel it if they try to quit
+  Timer? _peekTimer;
+
   @override
   void initState() {
     super.initState();
@@ -43,11 +46,61 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
   @override
   void dispose() {
     _confettiController.dispose();
+    _peekTimer?.cancel(); // Cancel timer if it exists
     super.dispose();
+  }
+
+  // --- NEW FEATURE: PAUSE & EXIT DIALOG ---
+  Future<bool> _onWillPop() async {
+    // If game is already over, let them leave freely
+    if (isGameOver) return true;
+
+    // Pause/Cancel the peek timer so it doesn't run in background
+    _peekTimer?.cancel();
+
+    final shouldPop = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Quit Game?"),
+        content: const Text("Your current progress will be lost."),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // User chose to Stay
+              Navigator.of(context).pop(false);
+
+              // If they were in the middle of peeking, just end the peek immediately
+              // (This prevents using the pause menu to cheat/extend peek time)
+              if (_isPeeking) {
+                setState(() {
+                  _peekCountdown = 0;
+                  _cardFlipped = List.generate(20, (index) => false);
+                  _isPeeking = false;
+                  _isProcessing = false;
+                });
+              }
+            },
+            child: const Text("Keep Playing"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text("Quit", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    return shouldPop ?? false;
   }
 
   // --- 1. SETUP LOGIC (20 Cards) ---
   void _startNewGame() {
+    // Cancel old timer if restarting
+    _peekTimer?.cancel();
+
     setState(() {
       // 10 pairs = 20 Cards
       List<String> letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
@@ -67,7 +120,7 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
       bearState = 'neutral';
     });
 
-    Timer.periodic(const Duration(seconds: 1), (timer) {
+    _peekTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
@@ -88,7 +141,6 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
 
   // --- 2. TAP INTERACTION ---
   void _onCardTap(int index) {
-    // FIXED: Added curly braces {} to satisfy the linter
     if (_isProcessing ||
         _cardFlipped[index] ||
         _cardMatched[index] ||
@@ -186,39 +238,44 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
   // --- MAIN BUILD ---
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text("Memory Match",
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Stack(
-        children: [
-          isGameOver ? _buildGameOverScreen() : _buildGameplayScreen(),
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConfettiWidget(
-              confettiController: _confettiController,
-              blastDirectionality: BlastDirectionality.explosive,
-              shouldLoop: false,
-              colors: const [
-                Colors.green,
-                Colors.blue,
-                Colors.pink,
-                Colors.orange,
-                Colors.purple
-              ],
-            ),
+    // 1. Wrap in WillPopScope to intercept the Android back button
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F7FA),
+        appBar: AppBar(
+          title: const Text("Memory Match",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          centerTitle: true,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            // 2. Use maybePop to trigger the _onWillPop method manually
+            onPressed: () => Navigator.maybePop(context),
           ),
-        ],
+        ),
+        body: Stack(
+          children: [
+            isGameOver ? _buildGameOverScreen() : _buildGameplayScreen(),
+            Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                shouldLoop: false,
+                colors: const [
+                  Colors.green,
+                  Colors.blue,
+                  Colors.pink,
+                  Colors.orange,
+                  Colors.purple
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -3,12 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // SCREEN IMPORTS
-import '../../widgets/settings_pages.dart';
 import '../create_account.dart';
 import '../sign_in.dart';
 import '../../splash_screen.dart';
 import 'awards.dart';
 import '../../widgets/profile_components.dart';
+import '../../widgets/settings_pages.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -318,7 +318,7 @@ class _ProfileState extends State<Profile> {
     return totalSigns;
   }
 
-  // --- 3. MAIN BUILD ---
+  // --- 3. MAIN BUILD (REORGANIZED 10/10 LAYOUT) ---
   @override
   Widget build(BuildContext context) {
     if (currentUser == null) {
@@ -341,7 +341,7 @@ class _ProfileState extends State<Profile> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    // CLEAN! Using imported widget
+                    // 1. HEADER & STATS (The "Happy" Zone)
                     ProfileHeader(
                       name: userData?['fullName'] ?? 'Learner',
                       imagePath: profileImage,
@@ -353,8 +353,6 @@ class _ProfileState extends State<Profile> {
                       onEditName: _editName,
                     ),
                     const SizedBox(height: 24),
-
-                    // CLEAN! Using imported widget + Navigation callback
                     StatsGrid(
                       streak: streakCount,
                       signs: signsCount,
@@ -364,10 +362,7 @@ class _ProfileState extends State<Profile> {
                             MaterialPageRoute(builder: (_) => const Awards()));
                       },
                     ),
-
                     const SizedBox(height: 24),
-
-                    // CLEAN! Using imported widget
                     AchievementsTeaser(
                       onTap: () {
                         Navigator.push(context,
@@ -377,7 +372,8 @@ class _ProfileState extends State<Profile> {
 
                     const SizedBox(height: 30),
 
-                    // --- ACCOUNT SETTINGS ---
+                    // 2. SETTINGS & SUPPORT (The "Utility" Zone)
+                    _buildSectionTitle("Account & Support"),
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -402,48 +398,6 @@ class _ProfileState extends State<Profile> {
                               onTap: _changePassword),
                           Divider(height: 1, color: Colors.grey.shade100),
                           ProfileMenuOption(
-                              icon: Icons.logout,
-                              title: 'Logout',
-                              onTap: _confirmLogout,
-                              isDestructive: false),
-                          Divider(height: 1, color: Colors.grey.shade100),
-                          ProfileMenuOption(
-                              icon: Icons.delete_forever,
-                              title: 'Delete Account',
-                              onTap: _deleteAccount,
-                              isDestructive: true),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // --- NEW: SUPPORT & INFO SECTION ---
-                    const Padding(
-                      padding: EdgeInsets.only(left: 8, bottom: 8),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text("Support & Info",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey)),
-                      ),
-                    ),
-
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4))
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          ProfileMenuOption(
                               icon: Icons.help_outline,
                               title: 'Help & FAQ',
                               onTap: () {
@@ -462,20 +416,57 @@ class _ProfileState extends State<Profile> {
                                     MaterialPageRoute(
                                         builder: (_) => const AboutUsPage()));
                               }),
-                          Divider(height: 1, color: Colors.grey.shade100),
-                          ProfileMenuOption(
-                              icon: Icons.privacy_tip_outlined,
-                              title: 'Privacy Policy',
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            "Visit hearinghands.com/privacy")));
-                              }),
                         ],
                       ),
                     ),
+
                     const SizedBox(height: 40),
+
+                    // 3. THE EXIT ZONE (Visual Separation)
+
+                    // A. Logout Button (Prominent but separate)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _confirmLogout,
+                        icon: const Icon(Icons.logout, size: 20),
+                        label: const Text("Log Out"),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.black87,
+                          side: BorderSide(color: Colors.grey.shade300),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          backgroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // B. Delete Account (Discreet Footer Text)
+                    GestureDetector(
+                      onTap: _deleteAccount,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        child: Text(
+                          "Delete Account",
+                          style: TextStyle(
+                            color: Colors.red.withValues(alpha: 0.7),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Colors.red.withValues(alpha: 0.3),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 4. CHERRY ON TOP: Version Number
+                    const SizedBox(height: 10),
+                    const Text("v1.0.0",
+                        style: TextStyle(color: Colors.grey, fontSize: 10)),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -483,7 +474,20 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // --- GUEST VIEW (Keeping this here as it's specific to the screen logic) ---
+  // Helper for Section Titles
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(title,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.grey)),
+      ),
+    );
+  }
+
+  // --- GUEST VIEW (Unchanged) ---
   Widget _buildGuestView() {
     return Scaffold(
       backgroundColor: Colors.white,

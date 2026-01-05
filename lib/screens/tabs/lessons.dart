@@ -141,22 +141,6 @@ class _LessonsState extends State<Lessons> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            // Streak Badge
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: primaryColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text(
-                                "🔥 Keep it up!",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),

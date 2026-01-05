@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'lessons.dart';
@@ -16,7 +15,6 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   int _selectedIndex = 0;
-  Timer? _hideTimer;
 
   final List<Widget> _screens = const [
     Lessons(),
@@ -27,30 +25,22 @@ class _HomeState extends State<Home> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _hideSystemUI();
-  }
-
-  void _hideSystemUI() {
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.manual,
-      overlays: [],
-    );
-  }
-
-  void _resetHideTimer() {
-    _hideTimer?.cancel();
-    _hideTimer = Timer(const Duration(seconds: 3), _hideSystemUI);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _resetHideTimer,
-      onPanDown: (_) => _resetHideTimer(),
+    // 1. Wrap with AnnotatedRegion to force the Status Bar to be visible with dark icons
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent, // Transparent bar
+        statusBarIconBrightness:
+            Brightness.dark, // Black icons (Time, Battery, etc.)
+        systemNavigationBarColor: Colors.white, // White bottom bar area
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
       child: Scaffold(
-        body: _screens[_selectedIndex],
+        // 2. Wrap the body in a SafeArea to ensure content doesn't go under the status bar
+        body: SafeArea(
+          bottom: false, // We want the bottom bar to stay at the bottom
+          child: _screens[_selectedIndex],
+        ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -72,7 +62,6 @@ class _HomeState extends State<Home> {
               setState(() {
                 _selectedIndex = index;
               });
-              _resetHideTimer(); // Reset timer on navigation change
             },
             items: [
               BottomNavigationBarItem(
@@ -130,11 +119,5 @@ class _HomeState extends State<Home> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _hideTimer?.cancel();
-    super.dispose();
   }
 }
