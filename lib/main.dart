@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Required for SystemChrome
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
@@ -13,28 +13,15 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // --- START OF FIX ---
-
-  // 1. Enable "Edge-to-Edge" mode.
-  // This tells the app to draw BEHIND the system bars, so the screen doesn't "shrink".
+  // STABLE: Edge-to-edge makes the app draw behind system bars without hiding them
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  // 2. Make the bars transparent.
-  // This lets you see the Status Bar (Top) and makes the Bottom Bar float over content
-  // instead of pushing it up.
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    // Status Bar (Top)
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark, // Use .light for dark backgrounds
-
-    // Navigation Bar (Bottom)
+    statusBarIconBrightness: Brightness.dark,
     systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarIconBrightness:
-        Brightness.dark, // Use .light for dark backgrounds
-    systemNavigationBarDividerColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.dark,
   ));
-
-  // --- END OF FIX ---
 
   final prefs = await SharedPreferences.getInstance();
   final bool seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
@@ -52,10 +39,9 @@ class MyApp extends StatelessWidget {
       title: 'HearingHands',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        useMaterial3: true,
         primarySwatch: Colors.green,
         scaffoldBackgroundColor: Colors.white,
-        // Optional: Ensure Material 3 is used for better transparency support
-        useMaterial3: true,
       ),
       home: seenOnboarding ? const Home() : const SplashScreen(),
     );

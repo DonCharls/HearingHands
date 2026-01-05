@@ -26,19 +26,17 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Wrap with AnnotatedRegion to force the Status Bar to be visible with dark icons
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent, // Transparent bar
-        statusBarIconBrightness:
-            Brightness.dark, // Black icons (Time, Battery, etc.)
-        systemNavigationBarColor: Colors.white, // White bottom bar area
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        // 2. Wrap the body in a SafeArea to ensure content doesn't go under the status bar
+        // SafeArea prevents the top clock/status bar from covering your app titles
         body: SafeArea(
-          bottom: false, // We want the bottom bar to stay at the bottom
+          bottom: false,
           child: _screens[_selectedIndex],
         ),
         bottomNavigationBar: Container(
@@ -65,53 +63,26 @@ class _HomeState extends State<Home> {
             },
             items: [
               BottomNavigationBarItem(
-                icon: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  child: Icon(
-                    Icons.menu_book,
-                    size: _selectedIndex == 0 ? 28 : 24,
-                  ),
-                ),
+                icon:
+                    Icon(Icons.menu_book, size: _selectedIndex == 0 ? 28 : 24),
                 label: 'Lessons',
               ),
               BottomNavigationBarItem(
-                icon: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  child: Icon(
-                    Icons.sports_esports_rounded,
-                    size: _selectedIndex == 1 ? 28 : 26,
-                  ),
-                ),
+                icon: Icon(Icons.sports_esports_rounded,
+                    size: _selectedIndex == 1 ? 28 : 26),
                 label: 'Games',
               ),
               BottomNavigationBarItem(
-                icon: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  child: Icon(
-                    Icons.workspace_premium_rounded,
-                    size: _selectedIndex == 2 ? 28 : 24,
-                  ),
-                ),
+                icon: Icon(Icons.workspace_premium_rounded,
+                    size: _selectedIndex == 2 ? 28 : 24),
                 label: 'Awards',
               ),
               BottomNavigationBarItem(
-                icon: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  child: Icon(
-                    Icons.book,
-                    size: _selectedIndex == 3 ? 28 : 22,
-                  ),
-                ),
+                icon: Icon(Icons.book, size: _selectedIndex == 3 ? 28 : 22),
                 label: 'Dictionary',
               ),
               BottomNavigationBarItem(
-                icon: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  child: Icon(
-                    Icons.person,
-                    size: _selectedIndex == 4 ? 28 : 24,
-                  ),
-                ),
+                icon: Icon(Icons.person, size: _selectedIndex == 4 ? 28 : 24),
                 label: 'Profile',
               ),
             ],
